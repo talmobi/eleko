@@ -1,0 +1,12 @@
+node_modules
+
+# vim temp files
+*.swp
+*.swo
+*.swn
+*.swm
+
+# mac files
+*.DS_Store
+
+package-lock.json

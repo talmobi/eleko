@@ -1,0 +1,32 @@
+{
+  "name": "elekid",
+  "version": "0.0.0",
+  "description": "simple electron starter project",
+  "main": "elekid.js",
+  "scripts": {
+    "download-easylist": "npm run download-easylist-1 || npm run download-easylist-2",
+    "download-easylist-1": "curl -O https://easylist-downloads.adblockplus.org/easylist.txt",
+    "download-easylist-2": "curl -O https://raw.githubusercontent.com/talmobi/yt-play/master/easylist.txt",
+    "start": "electron main.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "elekid"
+  ],
+  "author": "talmobi <talmo.christian@gmail.com>",
+  "license": "UNLICENSED",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/talmobi/elekid"
+  },
+  "bugs": {
+    "url": "https://github.com/talmobi/elekid/issues",
+    "email": "talmo.christian@gmail.com"
+  },
+  "dependencies": {
+    "electron": "2.0.2"
+  },
+  "devDependencies": {
+  }
+}
