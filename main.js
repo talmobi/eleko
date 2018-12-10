@@ -34,6 +34,8 @@ console.log( 'easyList length: ' + easyList.length )
 // called in session.webRequest.onBeforeRequest(...) to allow/reject ads
 function containsAds ( url )
 {
+  if ( !easyList ) return false
+
   url = String( url )
 
   for ( let i = 0; i < easyList.length; i++ ) {
