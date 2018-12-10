@@ -258,7 +258,9 @@ function createWindow ()
   } )
 
   // and load the index.html of the app
-  // mainWindow.loadFile( 'index.html' )
+  // mainWindow.loadFile(
+  // path.join( __dirname, 'index.html' )
+  // )
 
   // example load url
   console.log( 'playing video id: ' + _videoId )
