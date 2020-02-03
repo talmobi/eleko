@@ -208,7 +208,6 @@ function createWindow ()
 
   // cancel or do something before requests
   session.webRequest.onBeforeRequest(
-    [ '*://*./*' ], // all
     function ( details, callback ) {
       let url = details.url
 
