@@ -24,7 +24,7 @@ let easyList
 try {
   easyList = fs.readFileSync(
     path.join( __dirname, './easylist.txt' ), 'utf8'
-  ).split( '\n' )
+  ).split( /\r?\n\r?/ )
 } catch ( err ) {
   console.log( 'failed to load easylist.txt ( try downloading with "npm run download-easylist" )' )
   easyList = []
