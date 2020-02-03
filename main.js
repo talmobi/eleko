@@ -247,7 +247,7 @@ function createWindow ()
 
         tick()
       })()
-    `)
+    `, true )
 
     // setTimeout( function () {
     //   console.log( 'pausing video' )
