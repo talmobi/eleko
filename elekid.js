@@ -46,6 +46,7 @@ const DEFAULT_OPTS = {
     enableRemoteModule: false,
 
     // preload: path.join( __dirname, 'preload.js' )
+    preload: undefined
   }
 }
 
@@ -235,9 +236,8 @@ try {
   console.log( 'failed to load easylist.txt ( try downloading with "npm run download-easylist" )' )
   easyList = []
 }
-console.log( 'easyList length: ' + easyList.length )
 
-// called in session.webRequest.onBeforeRequest(...) to allow/reject ads
+// helper function for simple ad detection
 function containsAds ( url )
 {
   if ( !easyList ) return false
@@ -264,7 +264,9 @@ function parseFunction ( fn, args )
     ;(${ fnString })(${ args.join( ',' ) });
   `)
 
+  console.log( ' === parseFunction begin === ' )
   console.log( wrapped )
+  console.log( ' === parseFunction end === ' )
 
   return wrapped
 }
