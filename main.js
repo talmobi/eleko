@@ -250,6 +250,23 @@ function evaluate ( mainWindow, fn, ...args )
   } )
 }
 
+function onBeforeRequest ( mainWindow, filter )
+{
+  const session = mainWindow.webContents.session
+
+  // cancel or do something before requests
+  session.webRequest.onBeforeRequest(
+    function ( details, callback ) {
+      const shouldBlock = filter( details )
+      if ( shouldBlock ) {
+        // block
+        console.log( ' (x) url blocked: ' + url.slice( 0, 23 ) )
+        return callback( { cancel: true } )
+      }
+    }
+  )
+}
+
 async function createWindow ()
 {
   // Create the browser window
