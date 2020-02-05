@@ -221,7 +221,7 @@ function evaluate ( mainWindow, fn, ...args )
   } )
 }
 
-function createWindow ()
+async function createWindow ()
 {
   // Create the browser window
   mainWindow = new BrowserWindow( {
@@ -230,6 +230,9 @@ function createWindow ()
     height: 600,
     webPreferences: {
       nodeIntegration: false,
+      webviewTag: false,
+      contextIsolation: true,
+      enableRemoteModule: false,
       preload: path.join( __dirname, 'preload.js' )
     }
   } )
