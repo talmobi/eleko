@@ -4,6 +4,21 @@ const fs = require( 'fs' )
 const path = require( 'path' )
 const url = require( 'url' )
 
+function parseFunction ( fn, args )
+{
+  const fnString = fn.toString()
+
+  args = args.map( function ( arg ) { return JSON.stringify( arg ) } )
+
+  const wrapped = (`
+    ;(${ fnString })(${ args.join( ',' ) });
+  `)
+
+  console.log( wrapped )
+
+  return wrapped
+}
+
 process.on( 'uncaughtException', function ( error ) {
   console.log( ' === uncaughtException === ' )
 
