@@ -139,9 +139,8 @@ function execFunc ( fn )
   return ( '(' + fnString + ')();' )
 }
 
-funcs.initVideo = function ( width, height ) {
-  width = 480
-  height = 360
+const MAX_TIMEOUT = 1000 * 30 // 30 seconds
+const POLLTIME = 1000 // 1 second
 
   const videos = document.querySelectorAll( 'video' )
   const video = videos[ 0 ]
