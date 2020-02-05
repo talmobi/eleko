@@ -320,32 +320,8 @@ async function createWindow ()
   // mainWindow.webContents.executeJavaScript( execFunc( 'playVideo' ) )
 
   mainWindow.on( 'ready-to-show', function () {
-    // Setup IPC
-    mainWindow.webContents.executeJavaScript(`
-      const ipcRenderer = require( 'electron' ).ipcRenderer
-
-      ipcRenderer.send( 'ready-to-show', {
-        width: window.innerWidth,
-        height: window.innerHeight
-      } )
-
-      ;(function() {
-        let ticks = 0
-
-        function tick () {
-          ipcRenderer.send( 'tick', ticks++ )
-          setTimeout( tick, 1000 )
-        }
-
-        tick()
-      })()
-    `, true )
-
-    // setTimeout( function () {
-    //   console.log( 'pausing video' )
-    //   console.log( execFunc( 'pauseVideo' ) )
-    //   mainWindow.webContents.executeJavaScript( execFunc( 'pauseVideo' ) )
-    // }, 40000 )
+    console.log( 'ready-to-show' )
+    mainWindow.show()
   } )
 
   // and load the index.html of the app
@@ -353,19 +329,81 @@ async function createWindow ()
   // path.join( __dirname, 'index.html' )
   // )
 
+  // await new Promise( r => setTimeout( r, 5000 ) )
+
   // example load url
   console.log( 'playing video id: ' + _videoId )
-  mainWindow.loadURL(
-    _urlTemplate.replace( '$videoId', _videoId )
+  await goto( mainWindow, _urlTemplate.replace( '$videoId', _videoId ) )
 
-    /*
-      url.format( {
-        pathname: path.join( __dirname, 'index.html' ),
-        protocol: 'file:',
-        slashes: true
-      } )
-    */
-  )
+  await waitFor( mainWindow, 'video' )
+
+  let duration = await evaluate( mainWindow, function () {
+    const video = document.querySelector( 'video' )
+    video.pause()
+    video._play = video.play
+    video.play = function () {}
+    return video.duration
+  } )
+
+  console.log( 'video duration: ' + duration )
+
+  let title = await evaluate( mainWindow, function ( el ) {
+    return document[ el ]
+  }, 'title' )
+
+  console.log( 'title: ' + title )
+
+  console.log( 'waiting for #primary' )
+  await waitFor( mainWindow, '#primary' )
+  console.log( ' -> #primary found' )
+
+  // sleep and then play another video
+  await new Promise( r => setTimeout( r, 1000 * 5 ) )
+
+  await evaluate( mainWindow, function () {
+    const el = document.getElementById( 'primary' )
+    el.style.background = 'red'
+
+    const video = document.querySelector( 'video' )
+    video._play()
+  } )
+
+  // sleep and then play another video
+  await new Promise( r => setTimeout( r, 1000 * 10 ) )
+
+  await goto( mainWindow, _urlTemplate.replace( '$videoId', _philipGlassHoursVideoId ) )
+
+  await waitFor( mainWindow, 'video' )
+
+  duration = await evaluate( mainWindow, function () {
+    const video = document.querySelector( 'video' )
+    video.pause()
+    video._play = video.play
+    video.play = function () {}
+    return video.duration
+  } )
+
+  console.log( 'video duration: ' + duration )
+
+  title = await evaluate( mainWindow, function ( number, object ) {
+    console.log( 'number: ' + number )
+    return document[ object.name ]
+  }, 888, { name: 'title' } )
+
+  // sleep and then play another video
+  await new Promise( r => setTimeout( r, 1000 * 3 ) )
+
+  console.log( 'waiting for #primary' )
+  await waitFor( mainWindow, '#primary' )
+  console.log( ' -> #primary found' )
+
+  await evaluate( mainWindow, function () {
+    const el = document.getElementById( 'primary' )
+    el.style.background = 'green'
+
+    const video = document.querySelector( 'video' )
+    video._play()
+  } )
 
   // Open the DevTools
   // mainWindow.webContents.openDevTools()
