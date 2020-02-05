@@ -133,12 +133,10 @@ const creedenceId = 'Gu2pVPWGYMQ' // AV1
 const _urlTemplate = 'https://www.youtube.com/watch/$videoId'
 const _videoId = process.argv.slice( 2 )[ 0 ] || _philipGlassHoursVideoId
 
-const funcs = {}
-
-funcs.playVideo = function () {
-  const videos = document.querySelectorAll( 'video' )
-  const video = videos[ 0 ]
-  video.play()
+function execFunc ( fn )
+{
+  const fnString = fn.toString()
+  return ( '(' + fnString + ')();' )
 }
 
 funcs.initVideo = function ( width, height ) {
