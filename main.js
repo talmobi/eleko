@@ -142,40 +142,53 @@ function execFunc ( fn )
 const MAX_TIMEOUT = 1000 * 30 // 30 seconds
 const POLLTIME = 1000 // 1 second
 
-  const videos = document.querySelectorAll( 'video' )
-  const video = videos[ 0 ]
+function waitFor ( mainWindow, query, pollTime )
+{
+  return new Promise ( function ( resolve, reject ) {
+    if ( typeof query === 'string' ) {
+      const startTime = Date.now()
 
-  console.log( 'hello' )
+      function callback ( result ) {
+        console.log( ' === callback === ' )
 
-  const els = document.querySelectorAll( 'div' )
-  ;[].forEach.call( els, function ( el ) {
-    el.style.opacity = 1
-    el.style.overflow = 'hidden'
-    el.style.maxHeight = '0'
-    el.style.maxWidth = '0'
-    el.style.zIndex = 99999
+        if ( result ) {
+          return resolve()
+        }
+
+        const ms = pollTime || POLLTIME
+
+        setTimeout( next, ms )
+      }
+
+      next()
+
+      async function next () {
+        console.log( ' === next === ' )
+
+        const now = Date.now()
+        const delta = ( now - startTime )
+        if ( delta > MAX_TIMEOUT ) {
+          return reject( 'timed out' )
+        }
+
+        try {
+          const p = await mainWindow.webContents.executeJavaScript(
+            `
+                new Promise( function ( resolve, reject ) {
+                  console.log( ' === waitFor === ' )
+                  resolve( !!document.querySelector( '${ query }' ) )
+                } )
+            `
+            ,
+            true
+          )
+          callback( p )
+        } catch ( err ) {
+          throw 'error: waitFor query: ' + query
+        }
+      }
+    }
   } )
-
-  video.style.display = 'block'
-  video.style.position = 'fixed'
-  video.style.zIndex = -99999
-  video.style.top = 0
-  video.style.left = 0
-  video.style.opacity = 1
-
-  video.style.width = width + 'px'
-  video.style.height = height + 'px'
-
-  document.body.appendChild( video.parentNode )
-
-  video.play()
-}
-
-funcs.pauseVideo = function () {
-  const videos = document.querySelectorAll( 'video' )
-  const video = videos[ 0 ]
-
-  video.pause()
 }
 
 function execFunc ( name )
