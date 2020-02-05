@@ -20,6 +20,7 @@ api.goto = goto
 api.waitFor = waitFor
 api.evaluate = evaluate
 api.onBeforeRequest = onBeforeRequest
+api.getDefaultOptions = getDefaultOptions
 
 const WAITFOR_TIMEOUT_TIME = 1000 * 30 // 30 seconds
 const POLL_INTERVAL = 200 // milliseconds
@@ -46,6 +47,11 @@ const DEFAULT_OPTS = {
 
     // preload: path.join( __dirname, 'preload.js' )
   }
+}
+
+function getDefaultOptions ()
+{
+  return Object.assign( {}, DEFAULT_OPTS )
 }
 
 function launch ( opts )
