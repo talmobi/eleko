@@ -191,10 +191,21 @@ function waitFor ( mainWindow, query, pollTime )
   } )
 }
 
-function execFunc ( name )
+function goto ( mainWindow, url )
 {
-  const fnString = funcs[ name ].toString()
-  return ( '(' + fnString + ')();' )
+  console.log( ' === goto === ' )
+
+  return new Promise( async function ( resolve, reject ) {
+    try {
+      const p = await mainWindow.loadURL( url )
+      console.log( ' >> GOTO DONE << ' )
+      resolve()
+    } catch ( err ) {
+      reject( err )
+    }
+  } )
+}
+
 }
 
 function createWindow ()
