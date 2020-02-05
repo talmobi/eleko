@@ -206,6 +206,19 @@ function goto ( mainWindow, url )
   } )
 }
 
+function evaluate ( mainWindow, fn, ...args )
+{
+  console.log( ' === evaluate === ' )
+
+  const fnString = parseFunction( fn, args )
+
+  return new Promise( async function ( resolve, reject ) {
+    const p = await mainWindow.webContents.executeJavaScript(
+      fnString,
+      true
+    )
+    resolve( p )
+  } )
 }
 
 function createWindow ()
