@@ -258,6 +258,12 @@ async function createWindow ()
     width: 800,
     height: 600,
     webPreferences: {
+      autoplayPolicy: [ 'no-user-gesture-required', 'user-gesture-required', 'document-user-activation-required' ][ 2 ],
+
+      // javascript: false,
+      images: false,
+      webgl: false,
+
       nodeIntegration: false,
       webviewTag: false,
       contextIsolation: true,
