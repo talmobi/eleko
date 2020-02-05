@@ -140,52 +140,81 @@ function execFunc ( fn )
 }
 
 const MAX_TIMEOUT = 1000 * 30 // 30 seconds
-const POLLTIME = 1000 // 1 second
+const POLL_INTERVAL = 200 // milliseconds
 
-function waitFor ( mainWindow, query, pollTime )
+// mainWindow[, options], query[, ...args])
+function waitFor ( mainWindow, query, ...args )
 {
+  let opts = {}
+  if ( typeof query === 'object' ) {
+    opts = query
+    query = args[ 0 ]
+    args = args.slice( 1 )
+  }
+
+  if ( typeof query === 'object' ) {
+    throw new Error(`
+query must be a string, number or function
+function waitFor( mainWindow[, options], query[, ...args] )
+      `)
+  }
+
   return new Promise ( function ( resolve, reject ) {
+    if ( typeof query === 'number' ) {
+      return setTimeout( resolve, query )
+    }
+
+    let fnString
     if ( typeof query === 'string' ) {
-      const startTime = Date.now()
+      fnString = (`
+        ;(function () {
+          console.log( ' === waitFor === ' )
+          return !!document.querySelector( '${ query }' )
+        })()
+      `)
+    } else {
+      if ( typeof query !== 'function' ) {
+        throw new Error(`
+query must be a string, number or function
+function waitFor( mainWindow[, options], query[, ...args] )
+      `)
+      }
+      fnString = parseFunction( query, args )
+    }
 
-      function callback ( result ) {
-        console.log( ' === callback === ' )
+    const startTime = Date.now()
 
-        if ( result ) {
-          return resolve()
-        }
+    function callback ( result ) {
+      console.log( ' === callback === ' )
 
-        const ms = pollTime || POLLTIME
-
-        setTimeout( next, ms )
+      if ( result ) {
+        return resolve()
       }
 
-      next()
+      const ms = Number( opts.polling ) || POLL_INTERVAL
 
-      async function next () {
-        console.log( ' === next === ' )
+      setTimeout( next, ms )
+    }
 
-        const now = Date.now()
-        const delta = ( now - startTime )
-        if ( delta > MAX_TIMEOUT ) {
-          return reject( 'timed out' )
-        }
+    next()
 
-        try {
-          const p = await mainWindow.webContents.executeJavaScript(
-            `
-                new Promise( function ( resolve, reject ) {
-                  console.log( ' === waitFor === ' )
-                  resolve( !!document.querySelector( '${ query }' ) )
-                } )
-            `
-            ,
-            true
-          )
-          callback( p )
-        } catch ( err ) {
-          throw 'error: waitFor query: ' + query
-        }
+    async function next () {
+      console.log( ' === next === ' )
+
+      const now = Date.now()
+      const delta = ( now - startTime )
+      if ( delta > MAX_TIMEOUT ) {
+        return reject( 'timed out' )
+      }
+
+      try {
+        const p = await mainWindow.webContents.executeJavaScript(
+          fnString,
+          true
+        )
+        callback( p )
+      } catch ( err ) {
+        throw 'error: waitFor query: ' + query
       }
     }
   } )
