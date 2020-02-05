@@ -217,11 +217,15 @@ function onBeforeRequest ( mainWindow, filter )
   session.webRequest.onBeforeRequest(
     function ( details, callback ) {
       const shouldBlock = filter( details )
+
       if ( shouldBlock ) {
         // block
         console.log( ' (x) url blocked: ' + url.slice( 0, 23 ) )
         return callback( { cancel: true } )
       }
+
+      // don't block
+      return callback( { cancel: false } )
     }
   )
 }
