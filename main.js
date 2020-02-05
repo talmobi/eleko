@@ -128,6 +128,8 @@ ipcMain.on( 'quit', function ( evt, data ) {
 
 // example data
 const _philipGlassHoursVideoId = 'Wkof3nPK--Y'
+const pkmnBlueWaveId = 'pFbkURxNKPE' // requires h264
+const creedenceId = 'Gu2pVPWGYMQ' // AV1
 const _urlTemplate = 'https://www.youtube.com/watch/$videoId'
 const _videoId = process.argv.slice( 2 )[ 0 ] || _philipGlassHoursVideoId
 
