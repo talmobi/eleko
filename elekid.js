@@ -21,6 +21,7 @@ api.waitFor = waitFor
 api.evaluate = evaluate
 api.onBeforeRequest = onBeforeRequest
 api.getDefaultOptions = getDefaultOptions
+api.containsAds = containsAds
 
 const WAITFOR_TIMEOUT_TIME = 1000 * 30 // 30 seconds
 const POLL_INTERVAL = 200 // milliseconds
