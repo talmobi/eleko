@@ -1,35 +1,13 @@
-const electron = require( 'electron' )
-
 const fs = require( 'fs' )
 const path = require( 'path' )
 const url = require( 'url' )
 
 const eeto = require( 'eeto' )
 
-// Module to control application life
-const app = electron.app
-
-process.on( 'uncaughtException', function ( error ) {
-  console.log( ' === uncaughtException === ' )
-
-  try {
-    app.quit()
-    console.log( 'exited electron app' )
-  } catch ( err ) {
-    /* ignore */
-  }
-
-  console.log( error )
-
-  process.exit( 1 )
-} )
-
-// Module to create native browser window
-const BrowserWindow = electron.BrowserWindow
-
 const api = eeto()
 
 module.exports = api
+api.spawn = spawn
 api.launch = launch
 api.goto = goto
 api.waitFor = waitFor
@@ -71,8 +49,79 @@ function getDefaultOptions ()
   return Object.assign( {}, DEFAULT_OPTS )
 }
 
-function launch ( opts )
+function spawn ( filepath )
 {
+  // path to electron executable in node context
+  const _electron = require( 'electron' )
+
+  if ( typeof _electron !== 'string' ) {
+    console.log( 'not a string' )
+    throw new Error(`
+      Error: trying to spawn electron inside of an existing electron context.
+      Spawn from within a node context instead.
+        ex. 'node index.js'
+    `)
+  }
+
+  const _childProcess = require( 'child_process' )
+
+  const _path = require( 'path' )
+  const _nz = require( 'nozombie' )()
+
+  function onExit () {
+    _nz.kill()
+  }
+
+  process.on( 'exit', onExit )
+
+  // file to be run with electron
+  const mainPath = filepath
+
+  const command = _electron + ' ' + mainPath
+  console.log( 'command: ' + command )
+
+  const spawn = _childProcess.spawn( _electron, [ mainPath ], { stdio: 'inherit', shell: false } )
+  _nz.add( spawn.pid )
+
+  spawn.on( 'exit', function () {
+    process.removeListener( 'exit', onExit )
+  } )
+
+  return spawn
+}
+
+function launch ( electron, opts )
+{
+  if ( typeof electron === 'string' ) {
+    throw new Error(`
+      Error: trying to launch outide of electron context.
+      You need to run with the electron binary instead of node.
+        ex. 'electron main.js'
+        ex. 'node_modules/.bin/electron main.js'
+    `)
+  }
+
+  // Module to control application life
+  const app = electron.app
+
+  process.on( 'uncaughtException', function ( error ) {
+    console.log( ' === uncaughtException === ' )
+
+    try {
+      app.quit()
+      console.log( 'exited electron app' )
+    } catch ( err ) {
+      /* ignore */
+    }
+
+    console.log( error )
+
+    process.exit( 1 )
+  } )
+
+  // Module to create native browser window
+  const BrowserWindow = electron.BrowserWindow
+
   return new Promise( function ( resolve, reject ) {
     let _done = false
     const _timeout = setTimeout( function () {
@@ -81,8 +130,8 @@ function launch ( opts )
       reject( 'error: timed out launch' )
     }, LAUNCH_TIMEOUT_TIME )
 
-    // could maybe attach event listern on app.on( 'ready' )
-    // instead
+    // can't reall attach app.on( 'ready' ) listener because it
+    // might already have been called
     pollReadyState()
 
     function pollReadyState () {
@@ -97,24 +146,8 @@ function launch ( opts )
 
     function onReady () {
       // Create the browser window
-      let mainWindow = new BrowserWindow( {
-        show: false,
-        width: 800,
-        height: 600,
-        webPreferences: {
-          autoplayPolicy: [ 'no-user-gesture-required', 'user-gesture-required', 'document-user-activation-required' ][ 2 ],
-
-          // javascript: false,
-          images: false,
-          webgl: false,
-
-          nodeIntegration: false,
-          webviewTag: false,
-          contextIsolation: true,
-          enableRemoteModule: false,
-          preload: path.join( __dirname, 'preload.js' )
-        }
-      } )
+      const opts = getDefaultOptions()
+      let mainWindow = new BrowserWindow( opts )
 
       const session = mainWindow.webContents.session
 
