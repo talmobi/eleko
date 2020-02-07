@@ -116,6 +116,11 @@ function launch ( opts )
         }
       } )
 
+      const session = mainWindow.webContents.session
+
+      // set user-agent lowest compatible
+      session.setUserAgent( 'Mozilla/5.0 (https://github.com/talmobi/elekid)' )
+
       mainWindow.once( 'ready-to-show', function () {
         if ( _done ) {
           // we already timed out and yet now the window is ready,
