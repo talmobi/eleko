@@ -9,6 +9,21 @@ const eeto = require( 'eeto' )
 // Module to control application life
 const app = electron.app
 
+process.on( 'uncaughtException', function ( error ) {
+  console.log( ' === uncaughtException === ' )
+
+  try {
+    app.quit()
+    console.log( 'exited electron app' )
+  } catch ( err ) {
+    /* ignore */
+  }
+
+  console.log( error )
+
+  process.exit( 1 )
+} )
+
 // Module to create native browser window
 const BrowserWindow = electron.BrowserWindow
 
