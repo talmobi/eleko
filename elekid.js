@@ -66,31 +66,55 @@ function launch ( opts )
       reject( 'error: timed out launch' )
     }, LAUNCH_TIMEOUT_TIME )
 
-    // Create the browser window
-    const mainWindow = new BrowserWindow( {
-      show: false,
-      width: 800,
-      height: 600,
-      webPreferences: {
-        autoplayPolicy: [ 'no-user-gesture-required', 'user-gesture-required', 'document-user-activation-required' ][ 2 ],
+    // could maybe attach event listern on app.on( 'ready' )
+    // instead
+    pollReadyState()
 
-        // javascript: false,
-        images: false,
-        webgl: false,
-
-        nodeIntegration: false,
-        webviewTag: false,
-        contextIsolation: true,
-        enableRemoteModule: false,
-        preload: path.join( __dirname, 'preload.js' )
-      }
-    } )
-
-    mainWindow.once( 'ready-to-show', function () {
+    function pollReadyState () {
       if ( _done ) return
-      _done = true
-      resolve( mainWindow )
-    } )
+
+      if ( app.isReady() ) {
+        onReady()
+      } else {
+        setTimeout( checkReadyState, 33 )
+      }
+    }
+
+    function onReady () {
+      // Create the browser window
+      let mainWindow = new BrowserWindow( {
+        show: false,
+        width: 800,
+        height: 600,
+        webPreferences: {
+          autoplayPolicy: [ 'no-user-gesture-required', 'user-gesture-required', 'document-user-activation-required' ][ 2 ],
+
+          // javascript: false,
+          images: false,
+          webgl: false,
+
+          nodeIntegration: false,
+          webviewTag: false,
+          contextIsolation: true,
+          enableRemoteModule: false,
+          preload: path.join( __dirname, 'preload.js' )
+        }
+      } )
+
+      mainWindow.once( 'ready-to-show', function () {
+        if ( _done ) {
+          // we already timed out and yet now the window is ready,
+          // should rarely happen
+          console.log( 'warning: launch ready but was timed out earlier (launch timeout too short?)' )
+          mainWindow = undefined
+          return
+        }
+
+        _done = true
+        clearTimeout( _timeout )
+        resolve( mainWindow )
+      } )
+    }
   } )
 }
 
