@@ -74,7 +74,7 @@ function getDefaultOptions ()
 function launch ( opts )
 {
   return new Promise( function ( resolve, reject ) {
-    let done = false
+    let _done = false
     const _timeout = setTimeout( function () {
       if ( _done ) return
       _done = true
