@@ -4,7 +4,15 @@ const fs = require( 'fs' )
 const path = require( 'path' )
 const url = require( 'url' )
 
-const ek = require( './elekid.js' )
+const {
+  launch,
+  goto,
+  waitFor,
+  evaluate,
+  onBeforeRequest,
+  getDefaultOptions,
+  containsAds,
+} = require( './elekid.js' )
 
 process.on( 'uncaughtException', function ( error ) {
   console.log( ' === uncaughtException === ' )
