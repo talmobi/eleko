@@ -4,6 +4,8 @@ const fs = require( 'fs' )
 const path = require( 'path' )
 const url = require( 'url' )
 
+const nfzf = require( 'node-fzf' )
+
 const {
   launch,
   goto,
@@ -214,7 +216,11 @@ async function createWindow ()
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs
-app.on( 'ready', function () {
+app.on( 'ready', async function () {
+  const list = [ 'giraffe', 'whale', 'monkey' ]
+  const r = await nfzf( list )
+  r.selected && console.log( r.selected.value )
+
   createWindow()
 } )
 
