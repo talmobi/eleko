@@ -14,7 +14,7 @@ const {
   onBeforeRequest,
   getDefaultOptions,
   containsAds,
-} = require( './elekid.js' )
+} = require( './index.js' )
 
 process.on( 'uncaughtException', function ( error ) {
   console.log( ' === uncaughtException === ' )
