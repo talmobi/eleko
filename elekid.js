@@ -137,6 +137,7 @@ function launch ( electron, _options )
 
     function pollReadyState () {
       if ( _done ) return
+      console.log( 'pollReadyState' )
 
       if ( app.isReady() ) {
         onReady()
@@ -146,6 +147,7 @@ function launch ( electron, _options )
     }
 
     function onReady () {
+      console.log( 'onReady' )
 
       _stage = 'onReady new BrowserWindow'
       // Create the browser window
