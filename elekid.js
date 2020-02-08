@@ -140,7 +140,7 @@ function launch ( electron, _options )
       if ( app.isReady() ) {
         onReady()
       } else {
-        setTimeout( checkReadyState, 33 )
+        setTimeout( pollReadyState, 33 )
       }
     }
 
