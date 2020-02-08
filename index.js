@@ -17,17 +17,21 @@ api.getDefaultOptions = getDefaultOptions
 api.containsAds = containsAds
 
 api.infect = function ( mainWindow ) {
+  const infectedApi = {}
+
   ;[
     'goto',
     'waitFor',
     'evaluate',
     'onBeforeRequest'
   ].forEach( function ( name ) {
-    mainWindow[ name ] = function ( ...args ) {
+    infectedApi[ name ] = function ( ...args ) {
       args = [ mainWindow ].concat( args )
       api[ name ].apply( this, args )
     }
   } )
+
+  return infectedApi
 }
 
 const WAITFOR_TIMEOUT_TIME = 1000 * 30 // 30 seconds
