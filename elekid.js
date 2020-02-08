@@ -159,16 +159,14 @@ function launch ( electron, _options )
       // set user-agent lowest compatible
       session.setUserAgent( 'Mozilla/5.0 (https://github.com/talmobi/elekid)' )
 
-      _stage = 'loadURL about:blank'
-      // load blank page to trigger ready-to-show
-      mainWindow.loadURL( 'about:blank' )
-
-      _stage = 'loadURL ready-to-show'
-      mainWindow.once( 'ready-to-show', function () {
+      _stage = 'loadURL finish'
+      finish()
+      function finish () {
+        console.log( 'finish' )
         if ( _done ) {
           // we already timed out and yet now the window is ready,
           // should rarely happen
-          console.log( 'warning: launch ready but was timed out earlier (launch timeout too short?)' )
+          console.log( 'warning: launch finished but was timed out earlier (launch timeout too short?)' )
           mainWindow = undefined
           return
         }
@@ -176,7 +174,7 @@ function launch ( electron, _options )
 
         clearTimeout( _timeout )
         resolve( mainWindow )
-      } )
+      }
     }
   } )
 }
