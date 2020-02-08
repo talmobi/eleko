@@ -32,8 +32,10 @@
     "email": "talmo.christian@gmail.com"
   },
   "dependencies": {
-    "electron": "2.0.2"
+    "eeto": "0.0.1",
+    "electron": "~7.1.11",
+    "node-fzf": "~0.5.3",
+    "nozombie": "~0.6.0"
   },
-  "devDependencies": {
-  }
+  "devDependencies": {}
 }
