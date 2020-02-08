@@ -77,6 +77,12 @@ function spawn ( filepath )
   // file to be run with electron
   const mainPath = filepath
 
+  try {
+    fs.statSync( filepath )
+  } catch ( err ) {
+    throw err
+  }
+
   const command = _electron + ' ' + mainPath
   console.log( 'command: ' + command )
 
