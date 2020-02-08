@@ -90,7 +90,7 @@ function spawn ( filepath )
   return spawn
 }
 
-function launch ( electron, opts )
+function launch ( electron, _options )
 {
   if ( typeof electron === 'string' ) {
     throw new Error(`
@@ -146,7 +146,7 @@ function launch ( electron, opts )
 
     function onReady () {
       // Create the browser window
-      const opts = getDefaultOptions()
+      const opts = Object.assign( getDefaultOptions(), _options || {} )
       let mainWindow = new BrowserWindow( opts )
 
       const session = mainWindow.webContents.session
