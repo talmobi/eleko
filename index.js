@@ -16,6 +16,20 @@ api.onBeforeRequest = onBeforeRequest
 api.getDefaultOptions = getDefaultOptions
 api.containsAds = containsAds
 
+api.infect = function ( mainWindow ) {
+  ;[
+    'goto',
+    'waitFor',
+    'evaluate',
+    'onBeforeRequest'
+  ].forEach( function ( name ) {
+    mainWindow[ name ] = function ( ...args ) {
+      args = [ mainWindow ].concat( args )
+      api[ name ].apply( this, args )
+    }
+  } )
+}
+
 const WAITFOR_TIMEOUT_TIME = 1000 * 30 // 30 seconds
 const POLL_INTERVAL = 200 // milliseconds
 const LAUNCH_TIMEOUT_TIME = 10 * 1000
