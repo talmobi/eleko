@@ -123,11 +123,12 @@ function launch ( electron, _options )
   const BrowserWindow = electron.BrowserWindow
 
   return new Promise( function ( resolve, reject ) {
+    let _stage = 'pollReadyState'
     let _done = false
     const _timeout = setTimeout( function () {
       if ( _done ) return
       _done = true
-      reject( 'error: timed out launch' )
+      reject( 'error: timed out launch at ' + _stage + ' stage' )
     }, LAUNCH_TIMEOUT_TIME )
 
     // can't reall attach app.on( 'ready' ) listener because it
@@ -145,6 +146,8 @@ function launch ( electron, _options )
     }
 
     function onReady () {
+
+      _stage = 'onReady new BrowserWindow'
       // Create the browser window
       const opts = Object.assign( getDefaultOptions(), _options || {} )
       let mainWindow = new BrowserWindow( opts )
@@ -154,6 +157,11 @@ function launch ( electron, _options )
       // set user-agent lowest compatible
       session.setUserAgent( 'Mozilla/5.0 (https://github.com/talmobi/elekid)' )
 
+      _stage = 'loadURL about:blank'
+      // load blank page to trigger ready-to-show
+      mainWindow.loadURL( 'about:blank' )
+
+      _stage = 'loadURL ready-to-show'
       mainWindow.once( 'ready-to-show', function () {
         if ( _done ) {
           // we already timed out and yet now the window is ready,
@@ -162,8 +170,8 @@ function launch ( electron, _options )
           mainWindow = undefined
           return
         }
-
         _done = true
+
         clearTimeout( _timeout )
         resolve( mainWindow )
       } )
