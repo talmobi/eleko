@@ -3,6 +3,13 @@
   "version": "0.0.0",
   "description": "simple electron starter project",
   "main": "elekid.js",
+  "files": [
+    "index.js",
+    "cli.js",
+    "electron-main.js",
+    "easylist.txt",
+    "help.txt"
+  ],
   "scripts": {
     "download-easylist": "npm run download-easylist-1 || npm run download-easylist-2",
     "download-easylist-1": "curl -O https://easylist-downloads.adblockplus.org/easylist.txt",
