@@ -6,7 +6,7 @@ const fs = require( 'fs' )
 const path = require( 'path' )
 const url = require( 'url' )
 
-const elekid = require( '../index.js' )
+const eleko = require( '../index.js' )
 
 const http = require( 'http' )
 const express = require( 'express' )
@@ -84,7 +84,7 @@ async function createWindow ()
   const session = mainWindow.webContents.session
 
   // set user-agent lowest compatible
-  session.setUserAgent( 'Mozilla/5.0 (https://github.com/talmobi/elekid)' )
+  session.setUserAgent( 'Mozilla/5.0 (https://github.com/talmobi/eleko)' )
 
   test( 'goto local index.html', async function ( t ) {
     t.plan( 1 )
@@ -93,9 +93,9 @@ async function createWindow ()
     const url = `http://127.0.0.1:${ port }/index.html`
     console.log( url )
 
-    await elekid.goto( mainWindow, url )
+    await eleko.goto( mainWindow, url )
 
-    const title = await elekid.evaluate( mainWindow, function () {
+    const title = await eleko.evaluate( mainWindow, function () {
       return document.title
     } )
 
@@ -105,11 +105,11 @@ async function createWindow ()
   test( 'evaluate title with string args', async function ( t ) {
     t.plan( 1 )
 
-    await elekid.evaluate( mainWindow, function ( newTitle, selector ) {
+    await eleko.evaluate( mainWindow, function ( newTitle, selector ) {
       document[ selector ] = newTitle
     }, 'giraffe-title', 'title' )
 
-    const title = await elekid.evaluate( mainWindow, function () {
+    const title = await eleko.evaluate( mainWindow, function () {
       return document.title
     } )
 
@@ -119,11 +119,11 @@ async function createWindow ()
   test( 'evaluate title with object args', async function ( t ) {
     t.plan( 1 )
 
-    await elekid.evaluate( mainWindow, function ( data ) {
+    await eleko.evaluate( mainWindow, function ( data ) {
       document[ data.selector ] = data.title
     }, { title: 'whale-title', selector: 'title' } )
 
-    const title = await elekid.evaluate( mainWindow, function () {
+    const title = await eleko.evaluate( mainWindow, function () {
       return document.title
     } )
 
@@ -134,21 +134,21 @@ async function createWindow ()
     t.plan( 3 )
 
     const now = Date.now()
-    const text = await elekid.evaluate( mainWindow, function ( data ) {
+    const text = await eleko.evaluate( mainWindow, function ( data ) {
       const el = document.querySelector( 'div[type=monkey]' )
       return el && el.textContent
     } )
 
-    await elekid.evaluate( mainWindow, function ( data ) {
+    await eleko.evaluate( mainWindow, function ( data ) {
       triggerWaitFor( 'monkey' )
     } )
 
-    await elekid.waitFor( mainWindow, 'div[type=monkey]' )
+    await eleko.waitFor( mainWindow, 'div[type=monkey]' )
 
     // time waited
     const delta = Date.now() - now
 
-    const newText = await elekid.evaluate( mainWindow, function ( data ) {
+    const newText = await eleko.evaluate( mainWindow, function ( data ) {
       const el = document.querySelector( 'div[type=monkey]' )
       return el && el.textContent
     } )
@@ -162,16 +162,16 @@ async function createWindow ()
     t.plan( 3 )
 
     const now = Date.now()
-    const text = await elekid.evaluate( mainWindow, function ( data ) {
+    const text = await eleko.evaluate( mainWindow, function ( data ) {
       const el = document.querySelector( 'div[type=whale]' )
       return el && el.textContent
     } )
 
-    await elekid.evaluate( mainWindow, function ( data ) {
+    await eleko.evaluate( mainWindow, function ( data ) {
       triggerWaitFor( 'whale' )
     } )
 
-    await elekid.waitFor( mainWindow, function () {
+    await eleko.waitFor( mainWindow, function () {
       const el = document.querySelector( 'div[type=whale]' )
       return !!el
     } )
@@ -179,7 +179,7 @@ async function createWindow ()
     // time waited
     const delta = Date.now() - now
 
-    const newText = await elekid.evaluate( mainWindow, function ( data ) {
+    const newText = await eleko.evaluate( mainWindow, function ( data ) {
       const el = document.querySelector( 'div[type=whale]' )
       return el && el.textContent
     } )
@@ -192,21 +192,21 @@ async function createWindow ()
   test( 'evaluate promise', async function ( t ) {
     t.plan( 2 )
 
-    await elekid.evaluate( mainWindow, function ( newTitle, selector ) {
+    await eleko.evaluate( mainWindow, function ( newTitle, selector ) {
       document[ selector ] = newTitle
     }, 'before-promise-title', 'title' )
 
-    const title = await elekid.evaluate( mainWindow, function () {
+    const title = await eleko.evaluate( mainWindow, function () {
       return document.title
     } )
 
-    await elekid.evaluate( mainWindow, function ( newTitle, selector ) {
+    await eleko.evaluate( mainWindow, function ( newTitle, selector ) {
       setTimeout( function () {
         document[ selector ] = newTitle
       }, 1000 )
     }, 'after-promise-title', 'title' )
 
-    const newTitle = await elekid.evaluate( mainWindow, function () {
+    const newTitle = await eleko.evaluate( mainWindow, function () {
       return new Promise( function ( resolve, reject ) {
         setTimeout( function () {
           resolve( document.title )

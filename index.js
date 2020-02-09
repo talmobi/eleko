@@ -181,7 +181,7 @@ function launch ( electron, _options )
       const session = mainWindow.webContents.session
 
       // set user-agent lowest compatible
-      session.setUserAgent( 'Mozilla/5.0 (https://github.com/talmobi/elekid)' )
+      session.setUserAgent( 'Mozilla/5.0 (https://github.com/talmobi/eleko)' )
 
       _stage = 'finish'
       finish()
@@ -208,7 +208,7 @@ function setUserAgent ( mainWindow )
   const session = mainWindow.webContents.session
 
   // set user-agent lowest compatible
-  session.setUserAgent( 'Mozilla/5.0 (https://github.com/talmobi/elekid)' )
+  session.setUserAgent( 'Mozilla/5.0 (https://github.com/talmobi/eleko)' )
 }
 
 // mainWindow[, options], query[, ...args])

@@ -1,8 +1,8 @@
 {
-  "name": "elekid",
+  "name": "eleko",
   "version": "0.0.0",
   "description": "simple electron starter project",
-  "main": "elekid.js",
+  "main": "eleko.js",
   "files": [
     "index.js",
     "cli.js",
@@ -18,17 +18,17 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "elekid"
+    "eleko"
   ],
   "author": "talmobi <talmo.christian@gmail.com>",
   "license": "UNLICENSED",
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/talmobi/elekid"
+    "url": "https://github.com/talmobi/eleko"
   },
   "bugs": {
-    "url": "https://github.com/talmobi/elekid/issues",
+    "url": "https://github.com/talmobi/eleko/issues",
     "email": "talmo.christian@gmail.com"
   },
   "dependencies": {

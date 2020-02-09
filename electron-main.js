@@ -74,7 +74,7 @@ async function createWindow ()
   const session = mainWindow.webContents.session
 
   // set user-agent lowest compatible
-  session.setUserAgent( 'Mozilla/5.0 (https://github.com/talmobi/elekid)' )
+  session.setUserAgent( 'Mozilla/5.0 (https://github.com/talmobi/eleko)' )
 
   // const cookies = electron.session.defaultSession.cookies
   const cookies = session.cookies
