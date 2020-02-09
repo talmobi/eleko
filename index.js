@@ -4,11 +4,18 @@ const url = require( 'url' )
 
 const eeto = require( 'eeto' )
 
+const _nz = require( 'nozombie' )()
+
+process.on( 'exit', function onExit () {
+  _nz.kill()
+} )
+
 const api = eeto()
 
 module.exports = api
 api.spawn = spawn
 api.launch = launch
+api.createWindow = createWindow
 api.goto = goto
 api.waitFor = waitFor
 api.evaluate = evaluate
@@ -114,7 +121,127 @@ function spawn ( filepath )
   return spawn
 }
 
-function launch ( electron, _options )
+function launch ( options )
+{
+  return new Promise( function ( resolve, reject ) {
+    // path to electron executable in node context
+    const _electron = require( 'electron' )
+
+    if ( typeof _electron !== 'string' ) {
+      console.log( 'not a string' )
+      throw new Error(`
+        Error: trying to spawn electron inside of an existing electron context.
+        Spawn from within a node context instead.
+          ex. 'node index.js'
+      `)
+    }
+
+    const _childProcess = require( 'child_process' )
+
+    const _path = require( 'path' )
+
+    // file to be run with electron
+    const filepath = path.join( __dirname, 'launch.js' )
+
+    let _id = 1
+    const _promiseMap = {
+    }
+
+    function call ( ...args ) {
+      const id = _id++
+
+      let _resolve, _reject
+      const _promise = new Promise( function ( resolve, reject ) {
+        _resolve = resolve
+        _reject = reject
+      } )
+
+      _promiseMap[ id ] = {
+        promise: _promise,
+        resolve: _resolve,
+        reject: _reject
+      }
+
+      const json = {
+        type: 'eleko:ipc:call',
+        id: id,
+        query: args[ 0 ],
+        args: args.slice( 1 )
+      }
+
+      spawn.stdin.write( JSON.stringify( json ) + '\n' )
+
+      return _promise
+    }
+
+    const api = {
+      call: call
+    }
+
+    const spawn = _childProcess.spawn( _electron, [ filepath ], { stdio: 'pipe', shell: false } )
+    _nz.add( spawn.pid )
+
+    let _buffer = ''
+    spawn.stdout.on( 'data', function ( chunk ) {
+      _buffer += chunk
+      _processBuffer()
+    } )
+
+    function _processBuffer () {
+      const lines = _buffer.split( '\n' )
+      _buffer = lines.pop()
+
+      for ( let i = 0; i < lines.length; i++ ) {
+        const line = lines[ i ]
+        handleLine( line )
+      }
+    }
+
+    function handleLine ( line ) {
+      let json
+
+      try {
+        json = JSON.parse( line )
+      } catch ( err ) {
+        // TODO most likely regular output line (hide?)
+        return console.log( line )
+      }
+
+      console.log( 'type: ' + json.type )
+      console.log( 'id: ' + json.id )
+
+      switch ( json.type ) {
+        case 'call:response':
+          const id = json.id
+          const value = json.value
+          const error = json.error
+
+          console.log( 'value: ' + value )
+
+          const p = _promiseMap[ id ]
+          if ( error ) return p.reject( error )
+          p.resolve( value )
+          break
+
+        case 'console.log':
+          const args = json.args
+          console.log.apply( this, args )
+          break
+
+        default:
+      }
+    }
+
+    spawn.on( 'exit', function () {
+      console.log( 'spawn exited' )
+      process.removeListener( 'exit', onExit )
+    } )
+
+    resolve( api )
+  } )
+}
+
+function createWindow ( electron, _options )
 {
   if ( typeof electron === 'string' ) {
     throw new Error(`
