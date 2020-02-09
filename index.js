@@ -183,7 +183,7 @@ function launch ( electron, _options )
       // set user-agent lowest compatible
       session.setUserAgent( 'Mozilla/5.0 (https://github.com/talmobi/elekid)' )
 
-      _stage = 'loadURL finish'
+      _stage = 'finish'
       finish()
       function finish () {
         console.log( 'finish' )
