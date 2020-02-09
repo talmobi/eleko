@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Adorable baby giraffes</title>
+</head>
+<body>
+  <li id="list" class="list"></li>
+  <script type="text/javascript">
+    function triggerWaitFor ( type ) {
+      setTimeout(
+        function () {
+          const el = document.createElement( 'div' )
+          el.setAttribute( 'type', type )
+          el.textContent = type + ' text'
+          document.body.appendChild( el )
+        },
+        1000
+      )
+    }
+  </script>
+</body>
+</html>
