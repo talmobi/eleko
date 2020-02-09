@@ -326,6 +326,7 @@ function onBeforeRequest ( mainWindow, filter )
   // cancel or do something before requests
   session.webRequest.onBeforeRequest(
     function ( details, callback ) {
+      const url = details.url
       const shouldBlock = filter( details )
 
       if ( shouldBlock ) {
