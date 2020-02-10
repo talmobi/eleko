@@ -52,7 +52,9 @@ process.on( 'uncaughtException', function ( err ) {
       type: 'error',
       error: serializeError( err )
     } )
-    app.quit()
+    setTimeout( function () {
+      app.quit()
+    }, 500 )
   } catch ( err ) {
     /* ignore */
   }
