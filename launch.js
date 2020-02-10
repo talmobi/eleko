@@ -25,10 +25,14 @@ console.log = function ( ...args ) {
 
 process.stdout.write( ' == launched == ' )
 
-process.on( 'uncaughtException', function ( error ) {
+process.on( 'uncaughtException', function ( err ) {
   try {
-    _consoleLog( error )
+    _consoleLog( err )
     _consoleLog( 'exited electron app' )
+    emit( {
+      type: 'error',
+      error: serializeError( err )
+    } )
     app.quit()
   } catch ( err ) {
     /* ignore */
