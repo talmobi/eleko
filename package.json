@@ -34,8 +34,11 @@
   "dependencies": {
     "eeto": "0.0.1",
     "electron": "~7.1.11",
+    "function-to-string": "~0.2.0",
+    "jsonpath": "~1.0.2",
     "node-fzf": "~0.5.3",
-    "nozombie": "~0.6.0"
+    "nozombie": "~0.6.0",
+    "serialize-error": "~5.0.0"
   },
   "devDependencies": {
     "express": "~4.17.1",
