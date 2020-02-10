@@ -181,11 +181,11 @@ function launch ( options )
       return _promise
     }
 
-    const elApi = eeto()
-    elApi.call = call
+    const launchApi = eeto()
+    launchApi.call = call
 
     ;[ 'goto', 'waitFor', 'evaluate', 'onBeforeRequest' ].forEach( function ( name ) {
-      elApi[ name ] = function ( ...args ) {
+      launchApi[ name ] = function ( ...args ) {
         const id = _id++
 
         let _resolve, _reject
@@ -276,7 +276,7 @@ function launch ( options )
           {
             const error = deserializeError( json.error )
             console.log.apply( this, error )
-            elApi.emit( 'exit', error )
+            launchApi.emit( 'exit', error )
           }
           break
 
@@ -284,12 +284,12 @@ function launch ( options )
       }
     }
 
-    spawn.on( 'exit', function () {
-      console.log( 'electron spawn exited' )
-      elApi.emit( 'exit' )
+    spawn.on( 'exit', function ( code ) {
+      console.log( 'electron spawn exited, code: ' + code )
+      launchApi.emit( 'exit', code )
     } )
 
-    resolve( elApi )
+    resolve( launchApi )
   } )
 }
 
