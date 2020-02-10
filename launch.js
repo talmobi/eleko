@@ -5,6 +5,10 @@ const path = require( 'path' )
 
 const jp = require( 'jsonpath' )
 
+const eleko = require( './index.js' )
+const functionToString = require( 'function-to-string' )
+const { serializeError, deserializeError } = require( 'serialize-error' )
+
 // Module to control application life
 const app = electron.app
 
@@ -90,30 +94,66 @@ async function handleLine ( line )
     switch ( type ) {
       case 'eleko:ipc:call':
         const fn = jp.value( mainWindow, query )
-        const that = jp.value( mainWindow, query.split( '.' ).slice( 0, -1 ).join( '.' ) )
+
+        let that = mainWindow
+        try {
+          that = jp.value( mainWindow, query.split( '.' ).slice( 0, -1 ).join( '.' ) )
+        } catch ( err ) {
+          /* ignore */
+        }
 
         _consoleLog( query )
         _consoleLog( fn )
-        _consoleLog( args )
+
+        args && _consoleLog( ' == args == ' + args.length )
+        args && _consoleLog( args )
+
+        const txArgs = args.map( function ( arg ) {
+          return decodeValue( arg )
+        } )
+
+        txArgs && _consoleLog( ' == txArgs == ' + txArgs.length )
+        txArgs && _consoleLog( txArgs )
 
         let value = fn.apply(
           that,
-          args
+          txArgs
         )
 
-        _consoleLog( value )
+        function finish () {
+          _consoleLog( ' == finish == ' )
 
-        if ( value && typeof value.then === 'function' ) {
-          // is a promise
-          const promise = value
-          value = await promise
+          emit( {
+            type: 'call:response',
+            id: json.id,
+            value: value
+          } )
         }
 
-        emit( {
-          type: 'call:response',
-          id: json.id,
-          value: value
-        } )
+        handlePromise()
+        async function handlePromise () {
+          if ( value && typeof value === 'object' && typeof value.then === 'function' ) {
+            // is a promise
+            const promise = value
+
+            promise.then( function ( val ) {
+              value = val
+              return handlePromise()
+            } )
+
+            promise.catch( function ( err ) {
+              _consoleLog( 'error: ' + err )
+              _consoleLog( err )
+              return emit( {
+                type: 'call:response',
+                id: json.id,
+                error: err
+              } )
+            } )
+          } else {
+            finish()
+          }
+        }
         break
 
       default:
@@ -123,7 +163,7 @@ async function handleLine ( line )
     emit( {
       type: 'call:response',
       id: json.id,
-      error: err
+      error: serializeError( err )
     } )
   }
 }
@@ -186,3 +226,54 @@ app.on( 'activate', function () {
   //   createWindow()
   // }
 })
+
+function encodeValue ( value )
+{
+  const type = typeof value
+
+  let content
+  if ( type === 'object' || type === 'boolean' ) {
+    content = JSON.stringify( value )
+  } else if ( type === 'string' ) {
+    content = value
+  } else if ( type === 'number' ) {
+    content = value
+  } else if ( type === 'function' ) {
+    content = JSON.stringify(
+      functionToString( value )
+    )
+  }
+
+  return {
+    type: type,
+    content: content
+  }
+}
+
+function decodeValue ( pkg )
+{
+  const type = pkg.type
+  const content = pkg.content
+
+  if ( type === 'object' || type === 'boolean' ) {
+    return JSON.parse( content )
+  } else if ( type === 'string' ) {
+    return content
+  } else if ( type === 'number' ) {
+    return Number( content )
+  } else if ( type === 'function' ) {
+    const info = JSON.parse( content )
+    const f = eval(`
+      ;(function () {
+        return function ${ info.name || '' } ( ${ info.params.join( ', ' ) } ) {
+          ${ info.body }
+        }
+      })()
+    `)
+
+    _consoleLog( ' == funcions == ' )
+    _consoleLog( f.toString() )
+
+    return f
+  }
+}
