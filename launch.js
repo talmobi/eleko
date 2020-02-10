@@ -27,13 +27,12 @@ process.stdout.write( ' == launched == ' )
 
 process.on( 'uncaughtException', function ( error ) {
   try {
+    _consoleLog( error )
     _consoleLog( 'exited electron app' )
     app.quit()
   } catch ( err ) {
     /* ignore */
   }
-
-  console.log( error )
 
   process.exit( 1 )
 } )
@@ -88,8 +87,9 @@ async function handleLine ( line )
     const query = json.query
     const args = json.args
 
-    _consoleLog( 'id: ' + json.id )
-    _consoleLog( 'type: ' + type )
+    // _consoleLog( 'id: ' + json.id )
+    // _consoleLog( 'type: ' + type )
+    // _consoleLog( 'query: ' + query )
 
     switch ( type ) {
       case 'eleko:ipc:call':
