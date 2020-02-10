@@ -507,6 +507,7 @@ function parseFunction ( fn, args )
 {
   const fnString = fn.toString()
 
+  args = args || []
   args = args.map( function ( arg ) { return JSON.stringify( arg ) } )
 
   const wrapped = (`
