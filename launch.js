@@ -289,29 +289,6 @@ app.on( 'activate', function () {
   // }
 })
 
-function encodeValue ( value )
-{
-  const type = typeof value
-
-  let content
-  if ( type === 'object' || type === 'boolean' ) {
-    content = JSON.stringify( value )
-  } else if ( type === 'string' ) {
-    content = value
-  } else if ( type === 'number' ) {
-    content = value
-  } else if ( type === 'function' ) {
-    content = JSON.stringify(
-      functionToString( value )
-    )
-  }
-
-  return {
-    type: type,
-    content: content
-  }
-}
-
 function decodeValue ( pkg )
 {
   const type = pkg.type
