@@ -93,42 +93,71 @@ async function handleLine ( line )
 
     switch ( type ) {
       case 'eleko:ipc:call':
-        const fn = jp.value( mainWindow, query )
+        {
+          const fn = jp.value( mainWindow, query )
 
-        let that = mainWindow
-        try {
-          that = jp.value( mainWindow, query.split( '.' ).slice( 0, -1 ).join( '.' ) )
-        } catch ( err ) {
-          /* ignore */
-        }
+          let that = mainWindow
+          try {
+            that = jp.value( mainWindow, query.split( '.' ).slice( 0, -1 ).join( '.' ) )
+          } catch ( err ) {
+            /* ignore */
+          }
 
-        _consoleLog( query )
-        _consoleLog( fn )
+          _consoleLog( query )
+          _consoleLog( fn )
 
-        args && _consoleLog( ' == args == ' + args.length )
-        args && _consoleLog( args )
+          args && _consoleLog( ' == args == ' + args.length )
+          args && _consoleLog( args )
 
-        const txArgs = args.map( function ( arg ) {
-          return decodeValue( arg )
-        } )
-
-        txArgs && _consoleLog( ' == txArgs == ' + txArgs.length )
-        txArgs && _consoleLog( txArgs )
-
-        let value = fn.apply(
-          that,
-          txArgs
-        )
-
-        function finish () {
-          _consoleLog( ' == finish == ' )
-
-          emit( {
-            type: 'call:response',
-            id: json.id,
-            value: value
+          const txArgs = args.map( function ( arg ) {
+            return decodeValue( arg )
           } )
+
+          txArgs && _consoleLog( ' == txArgs == ' + txArgs.length )
+          txArgs && _consoleLog( txArgs )
+
+          let value = fn.apply(
+            that,
+            txArgs
+          )
+
+          function finish () {
+            _consoleLog( ' == finish == ' )
+
+            emit( {
+              type: 'response',
+              id: json.id,
+              value: value
+            } )
+          }
+
+          handlePromise()
+          async function handlePromise () {
+            if ( value && typeof value === 'object' && typeof value.then === 'function' ) {
+              // is a promise
+              const promise = value
+
+              promise.then( function ( val ) {
+                value = val
+                return handlePromise()
+              } )
+
+              promise.catch( function ( err ) {
+                _consoleLog( 'error: ' + err )
+                _consoleLog( err )
+                return emit( {
+                  type: 'response',
+                  id: json.id,
+                  error: err
+                } )
+              } )
+            } else {
+              finish()
+            }
+          }
         }
+        break
+
 
         handlePromise()
         async function handlePromise () {
