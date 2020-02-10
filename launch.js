@@ -23,7 +23,26 @@ console.log = function ( ...args ) {
   } )
 }
 
-process.stdout.write( ' == launched == ' )
+const _envs = {}
+Object.keys( process.env ).forEach(
+  function ( key ) {
+    const n = process.env[ key ]
+    if ( n == '0' || n == 'false' || !n ) {
+      return _envs[ key ] = false
+    }
+    _envs[ key ] = n
+  }
+)
+
+function debugLog ( ...args ) {
+  if ( !_envs.debug ) return
+  emit( {
+    type: 'console.log',
+    args: args
+  } )
+}
+
+debugLog( ' == launched == ' )
 
 process.on( 'uncaughtException', function ( err ) {
   try {

@@ -8,6 +8,22 @@ const _nz = require( 'nozombie' )()
 const functionToString = require( 'function-to-string' )
 const { serializeError, deserializeError } = require( 'serialize-error' )
 
+const _envs = {}
+Object.keys( process.env ).forEach(
+  function ( key ) {
+    const n = process.env[ key ]
+    if ( n == '0' || n == 'false' || !n ) {
+      return _envs[ key ] = false
+    }
+    _envs[ key ] = n
+  }
+)
+
+function debugLog ( ...args ) {
+  if ( !_envs.debug ) return
+  console.log.apply( this, args )
+}
+
 process.on( 'exit', function onExit () {
   _nz.kill()
 } )
