@@ -181,12 +181,11 @@ function launch ( options )
       return _promise
     }
 
-    const api = {
-      call: call
-    }
+    const elApi = eeto()
+    elApi.call = call
 
     ;[ 'goto', 'waitFor', 'evaluate', 'onBeforeRequest' ].forEach( function ( name ) {
-      api[ name ] = function ( ...args ) {
+      elApi[ name ] = function ( ...args ) {
         const id = _id++
 
         let _resolve, _reject
@@ -250,26 +249,35 @@ function launch ( options )
 
       switch ( json.type ) {
         case 'resolve':
-          const id = json.id
-          const value = json.value
-          const error = json.error
+          {
+            const id = json.id
+            const value = json.value
+            const error = json.error
 
-          // console.log( 'id: ' + id )
-          // console.log( 'value: ' + value )
-          // console.log( 'error: ' + error )
+            // console.log( 'id: ' + id )
+            // console.log( 'value: ' + value )
+            // console.log( 'error: ' + error )
 
-          const p = _promiseMap[ id ]
+            const p = _promiseMap[ id ]
 
-          if ( error ) return p.reject( deserializeError( error ) )
-          p.resolve( value )
+            if ( error ) return p.reject( deserializeError( error ) )
+            p.resolve( value )
+          }
           break
 
         case 'console.log':
-          console.log.apply( this, json.args )
+          {
+            const args = json.args
+            console.log.apply( this, args )
+          }
           break
 
         case 'error':
-          console.log.apply( this, json.error )
+          {
+            const error = deserializeError( json.error )
+            console.log.apply( this, error )
+            elApi.emit( 'exit', error )
+          }
           break
 
         default:
@@ -277,10 +285,11 @@ function launch ( options )
     }
 
     spawn.on( 'exit', function () {
-      console.log( 'spawn exited' )
+      console.log( 'electron spawn exited' )
+      elApi.emit( 'exit' )
     } )
 
-    resolve( api )
+    resolve( elApi )
   } )
 }
 
