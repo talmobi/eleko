@@ -125,7 +125,7 @@ async function handleLine ( line )
             _consoleLog( ' == finish == ' )
 
             emit( {
-              type: 'response',
+              type: 'resolve',
               id: json.id,
               value: value
             } )
@@ -146,7 +146,7 @@ async function handleLine ( line )
                 _consoleLog( 'error: ' + err )
                 _consoleLog( err )
                 return emit( {
-                  type: 'response',
+                  type: 'resolve',
                   id: json.id,
                   error: err
                 } )
@@ -185,7 +185,7 @@ async function handleLine ( line )
             _consoleLog( ' == finish == ' )
 
             emit( {
-              type: 'response',
+              type: 'resolve',
               id: json.id,
               value: value
             } )
@@ -206,7 +206,7 @@ async function handleLine ( line )
                 _consoleLog( 'error: ' + err )
                 _consoleLog( err )
                 return emit( {
-                  type: 'response',
+                  type: 'resolve',
                   id: json.id,
                   error: err
                 } )
@@ -223,7 +223,7 @@ async function handleLine ( line )
     }
   } catch ( err ) {
     emit( {
-      type: 'response',
+      type: 'resolve',
       id: json.id,
       error: serializeError( err )
     } )
