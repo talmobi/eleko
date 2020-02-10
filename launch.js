@@ -152,7 +152,7 @@ async function handleLine ( line )
                 return emit( {
                   type: 'resolve',
                   id: json.id,
-                  error: err
+                  error: serializeError( err )
                 } )
               } )
             } else {
@@ -212,7 +212,7 @@ async function handleLine ( line )
                 return emit( {
                   type: 'resolve',
                   id: json.id,
-                  error: err
+                  error: serializeError( err )
                 } )
               } )
             } else {
