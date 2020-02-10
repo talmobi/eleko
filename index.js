@@ -242,7 +242,6 @@ function launch ( options )
 
     spawn.on( 'exit', function () {
       console.log( 'spawn exited' )
-      process.removeListener( 'exit', onExit )
     } )
 
     resolve( api )
