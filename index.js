@@ -101,7 +101,7 @@ function spawn ( filepath )
   const _electron = require( 'electron' )
 
   if ( typeof _electron !== 'string' ) {
-    console.log( 'not a string' )
+    debugLog( 'not a string' )
     throw new Error(`
       Error: trying to spawn electron inside of an existing electron context.
       Spawn from within a node context instead.
@@ -130,7 +130,7 @@ function spawn ( filepath )
   }
 
   const command = _electron + ' ' + mainPath
-  console.log( 'command: ' + command )
+  debugLog( 'command: ' + command )
 
   const spawn = _childProcess.spawn( _electron, [ mainPath ], { stdio: 'inherit', shell: false } )
   _nz.add( spawn.pid )
@@ -149,7 +149,7 @@ function launch ( options )
     const _electron = require( 'electron' )
 
     if ( typeof _electron !== 'string' ) {
-      console.log( 'not a string' )
+      debugLog( 'not a string' )
       throw new Error(`
         Error: trying to spawn electron inside of an existing electron context.
         Spawn from within a node context instead.
@@ -259,6 +259,7 @@ function launch ( options )
     function _processBuffer () {
       const lines = _buffer.split( '\n' )
       _buffer = lines.pop()
+      // debugLog( '_buffer.length: ' + _buffer.length )
 
       for ( let i = 0; i < lines.length; i++ ) {
         const line = lines[ i ]
@@ -273,11 +274,11 @@ function launch ( options )
         json = JSON.parse( line )
       } catch ( err ) {
         // TODO most likely regular output line (hide?)
-        return console.log( line )
+        return debugLog( line )
       }
 
-      // console.log( 'type: ' + json.type )
-      // console.log( 'id: ' + json.id )
+      // debugLog( 'type: ' + json.type )
+      // debugLog( 'id: ' + json.id )
 
       switch ( json.type ) {
         case 'resolve':
@@ -286,9 +287,9 @@ function launch ( options )
             const value = json.value
             const error = json.error
 
-            // console.log( 'id: ' + id )
-            // console.log( 'value: ' + value )
-            // console.log( 'error: ' + error )
+            // debugLog( 'id: ' + id )
+            // debugLog( 'value: ' + value )
+            // debugLog( 'error: ' + error )
 
             const p = _promiseMap[ id ]
 
@@ -300,7 +301,7 @@ function launch ( options )
         case 'console.log':
           {
             const args = json.args
-            console.log.apply( this, args )
+            debugLog.apply( this, args )
           }
           break
 
@@ -341,16 +342,16 @@ function createWindow ( electron, _options )
   const app = electron.app
 
   process.on( 'uncaughtException', function ( error ) {
-    console.log( ' === uncaughtException === ' )
+    debugLog( ' === uncaughtException === ' )
 
     try {
       app.quit()
-      console.log( 'exited electron app' )
+      debugLog( 'exited electron app' )
     } catch ( err ) {
       /* ignore */
     }
 
-    console.log( error )
+    debugLog( error )
 
     process.exit( 1 )
   } )
@@ -373,7 +374,7 @@ function createWindow ( electron, _options )
 
     function pollReadyState () {
       if ( _done ) return
-      console.log( 'pollReadyState' )
+      debugLog( 'pollReadyState' )
 
       if ( app.isReady() ) {
         onReady()
@@ -383,7 +384,7 @@ function createWindow ( electron, _options )
     }
 
     function onReady () {
-      console.log( 'onReady' )
+      debugLog( 'onReady' )
 
       _stage = 'onReady new BrowserWindow'
       // Create the browser window
@@ -398,11 +399,11 @@ function createWindow ( electron, _options )
       _stage = 'finish'
       finish()
       function finish () {
-        console.log( 'finish' )
+        debugLog( 'finish' )
         if ( _done ) {
           // we already timed out and yet now the window is ready,
           // should rarely happen
-          console.log( 'warning: launch finished but was timed out earlier (launch timeout too short?)' )
+          debugLog( 'warning: launch finished but was timed out earlier (launch timeout too short?)' )
           mainWindow = undefined
           return
         }
@@ -449,7 +450,7 @@ function waitFor ( mainWindow, query, ...args )
     if ( typeof query === 'string' ) {
       fnString = (`
         ;(function () {
-          console.log( ' === waitFor === ' )
+          /* console.log( ' === waitFor === ' ) */
           return !!document.querySelector( '${ query }' )
         })()
       `)
@@ -466,7 +467,7 @@ function waitFor ( mainWindow, query, ...args )
     const startTime = Date.now()
 
     function callback ( result ) {
-      console.log( ' === callback === ' )
+      debugLog( ' === callback === ' )
 
       if ( result ) {
         return resolve()
@@ -480,7 +481,7 @@ function waitFor ( mainWindow, query, ...args )
     next()
 
     async function next () {
-      console.log( ' === next === ' )
+      debugLog( ' === next === ' )
 
       const now = Date.now()
       const delta = ( now - startTime )
@@ -503,12 +504,12 @@ function waitFor ( mainWindow, query, ...args )
 
 function goto ( mainWindow, url )
 {
-  console.log( ' === goto === ' )
+  debugLog( ' === goto === ' )
 
   return new Promise( async function ( resolve, reject ) {
     try {
       const p = await mainWindow.loadURL( url )
-      console.log( ' >> GOTO DONE << ' )
+      debugLog( ' >> GOTO DONE << ' )
       resolve()
     } catch ( err ) {
       reject( err )
@@ -518,7 +519,7 @@ function goto ( mainWindow, url )
 
 function evaluate ( mainWindow, fn, ...args )
 {
-  console.log( ' === evaluate === ' )
+  debugLog( ' === evaluate === ' )
 
   const fnString = parseFunction( fn, args )
 
@@ -543,7 +544,7 @@ function onBeforeRequest ( mainWindow, filter )
 
       if ( shouldBlock ) {
         // block
-        console.log( ' (x) url blocked: ' + url.slice( 0, 23 ) )
+        debugLog( ' (x) url blocked: ' + url.slice( 0, 23 ) )
         return callback( { cancel: true } )
       }
 
@@ -560,7 +561,7 @@ try {
     path.join( __dirname, './easylist.txt' ), 'utf8'
   ).split( /\r?\n\r?/ )
 } catch ( err ) {
-  console.log( 'failed to load easylist.txt ( try downloading with "npm run download-easylist" )' )
+  debugLog( 'failed to load easylist.txt ( try downloading with "npm run download-easylist" )' )
   easyList = []
 }
 
@@ -592,9 +593,9 @@ function parseFunction ( fn, args )
     ;(${ fnString })(${ args.join( ',' ) });
   `)
 
-  console.log( ' === parseFunction begin === ' )
-  console.log( wrapped )
-  console.log( ' === parseFunction end === ' )
+  debugLog( ' === parseFunction begin === ' )
+  debugLog( wrapped )
+  debugLog( ' === parseFunction end === ' )
 
   return wrapped
 }
