@@ -158,29 +158,62 @@ async function handleLine ( line )
         }
         break
 
+      case 'eleko:ipc:eleko':
+        {
+          const fn = eleko[ query ]
+          let that = eleko
 
-        handlePromise()
-        async function handlePromise () {
-          if ( value && typeof value === 'object' && typeof value.then === 'function' ) {
-            // is a promise
-            const promise = value
+          _consoleLog( query )
+          _consoleLog( fn )
 
-            promise.then( function ( val ) {
-              value = val
-              return handlePromise()
+          args && _consoleLog( ' == args == ' + args.length )
+          args && _consoleLog( args )
+
+          const txArgs = args.map( function ( arg ) {
+            return decodeValue( arg )
+          } )
+
+          txArgs && _consoleLog( ' == txArgs == ' + txArgs.length )
+          txArgs && _consoleLog( txArgs )
+
+          let value = fn.apply(
+            that,
+            txArgs
+          )
+
+          function finish () {
+            _consoleLog( ' == finish == ' )
+
+            emit( {
+              type: 'response',
+              id: json.id,
+              value: value
             } )
+          }
 
-            promise.catch( function ( err ) {
-              _consoleLog( 'error: ' + err )
-              _consoleLog( err )
-              return emit( {
-                type: 'call:response',
-                id: json.id,
-                error: err
+          handlePromise()
+          async function handlePromise () {
+            if ( value && typeof value === 'object' && typeof value.then === 'function' ) {
+              // is a promise
+              const promise = value
+
+              promise.then( function ( val ) {
+                value = val
+                return handlePromise()
               } )
-            } )
-          } else {
-            finish()
+
+              promise.catch( function ( err ) {
+                _consoleLog( 'error: ' + err )
+                _consoleLog( err )
+                return emit( {
+                  type: 'response',
+                  id: json.id,
+                  error: err
+                } )
+              } )
+            } else {
+              finish()
+            }
           }
         }
         break
