@@ -13,6 +13,7 @@ process.on( 'exit', function onExit () {
 const api = eeto()
 
 module.exports = api
+
 api.spawn = spawn
 api.launch = launch
 api.createWindow = createWindow
@@ -22,6 +23,8 @@ api.evaluate = evaluate
 api.onBeforeRequest = onBeforeRequest
 api.getDefaultOptions = getDefaultOptions
 api.containsAds = containsAds
+
+api.parseFunction = parseFunction
 
 api.infect = function ( mainWindow ) {
   const infectedApi = {}
