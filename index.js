@@ -185,6 +185,37 @@ function launch ( options )
       call: call
     }
 
+    ;[ 'goto', 'waitFor', 'evaluate', 'onBeforeRequest' ].forEach( function ( name ) {
+      api[ name ] = function ( ...args ) {
+        const id = _id++
+
+        let _resolve, _reject
+        const _promise = new Promise( function ( resolve, reject ) {
+          _resolve = resolve
+          _reject = reject
+        } )
+
+        _promiseMap[ id ] = {
+          promise: _promise,
+          resolve: _resolve,
+          reject: _reject
+        }
+
+        const json = {
+          type: 'eleko:ipc:eleko',
+          id: id,
+          query: name,
+          args: args.map( function ( arg ) {
+            return encodeValue( arg )
+          } )
+        }
+
+        spawn.stdin.write( JSON.stringify( json ) + '\n' )
+
+        return _promise
+      }
+    } )
+
     const spawn = _childProcess.spawn( _electron, [ filepath ], { stdio: 'pipe', shell: false } )
     _nz.add( spawn.pid )
 
