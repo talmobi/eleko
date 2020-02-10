@@ -265,8 +265,11 @@ function launch ( options )
           break
 
         case 'console.log':
-          const args = json.args
-          console.log.apply( this, args )
+          console.log.apply( this, json.args )
+          break
+
+        case 'error':
+          console.log.apply( this, json.error )
           break
 
         default:
