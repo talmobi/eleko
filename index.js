@@ -214,8 +214,8 @@ function launch ( options )
         return console.log( line )
       }
 
-      console.log( 'type: ' + json.type )
-      console.log( 'id: ' + json.id )
+      // console.log( 'type: ' + json.type )
+      // console.log( 'id: ' + json.id )
 
       switch ( json.type ) {
         case 'call:response':
@@ -223,7 +223,9 @@ function launch ( options )
           const value = json.value
           const error = json.error
 
-          console.log( 'value: ' + value )
+          // console.log( 'id: ' + id )
+          // console.log( 'value: ' + value )
+          // console.log( 'error: ' + error )
 
           const p = _promiseMap[ id ]
 
