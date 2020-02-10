@@ -78,7 +78,7 @@ process.stdin.on( 'data', function ( chunk ) {
 
 function _processBuffer ()
 {
-  process.stdout.write( ' == _processBuffer == ' )
+  debugLog( ' == _processBuffer == ' )
 
   const lines = _buffer.split( '\n' )
   _buffer = lines.pop()
@@ -98,13 +98,13 @@ function emit ( json )
 
 async function handleLine ( line )
 {
-  _consoleLog( ' == handleLine == ' )
+  debugLog( ' == handleLine == ' )
 
   let json
   try {
     json = JSON.parse( line )
   } catch ( err ) {
-    _consoleLog( err )
+    debugLog( err )
   }
 
   try {
@@ -112,9 +112,9 @@ async function handleLine ( line )
     const query = json.query
     const args = json.args || []
 
-    // _consoleLog( 'id: ' + json.id )
-    // _consoleLog( 'type: ' + type )
-    // _consoleLog( 'query: ' + query )
+    // debugLog( 'id: ' + json.id )
+    // debugLog( 'type: ' + type )
+    // debugLog( 'query: ' + query )
 
     switch ( type ) {
       case 'eleko:ipc:call':
@@ -128,18 +128,18 @@ async function handleLine ( line )
             /* ignore */
           }
 
-          _consoleLog( query )
-          _consoleLog( fn )
+          debugLog( query )
+          debugLog( fn )
 
-          args && _consoleLog( ' == args == ' + args.length )
-          args && _consoleLog( args )
+          args && debugLog( ' == args == ' + args.length )
+          args && debugLog( args )
 
           const txArgs = args.map( function ( arg ) {
             return decodeValue( arg )
           } )
 
-          txArgs && _consoleLog( ' == txArgs == ' + txArgs.length )
-          txArgs && _consoleLog( txArgs )
+          txArgs && debugLog( ' == txArgs == ' + txArgs.length )
+          txArgs && debugLog( txArgs )
 
           let value = fn.apply(
             that,
@@ -147,7 +147,7 @@ async function handleLine ( line )
           )
 
           function finish () {
-            _consoleLog( ' == finish == ' )
+            debugLog( ' == finish == ' )
 
             emit( {
               type: 'resolve',
@@ -168,8 +168,8 @@ async function handleLine ( line )
               } )
 
               promise.catch( function ( err ) {
-                _consoleLog( 'error: ' + err )
-                _consoleLog( err )
+                debugLog( 'error: ' + err )
+                debugLog( err )
                 return emit( {
                   type: 'resolve',
                   id: json.id,
@@ -189,18 +189,18 @@ async function handleLine ( line )
 
           let that = electron.app
 
-          _consoleLog( query )
-          _consoleLog( fn )
+          debugLog( query )
+          debugLog( fn )
 
-          args && _consoleLog( ' == args == ' + args.length )
-          args && _consoleLog( args )
+          args && debugLog( ' == args == ' + args.length )
+          args && debugLog( args )
 
           const txArgs = args.map( function ( arg ) {
             return decodeValue( arg )
           } )
 
-          txArgs && _consoleLog( ' == txArgs == ' + txArgs.length )
-          txArgs && _consoleLog( txArgs )
+          txArgs && debugLog( ' == txArgs == ' + txArgs.length )
+          txArgs && debugLog( txArgs )
 
           let value = fn.apply(
             that,
@@ -208,7 +208,7 @@ async function handleLine ( line )
           )
 
           function finish () {
-            _consoleLog( ' == finish == ' )
+            debugLog( ' == finish == ' )
 
             emit( {
               type: 'resolve',
@@ -229,8 +229,8 @@ async function handleLine ( line )
               } )
 
               promise.catch( function ( err ) {
-                _consoleLog( 'error: ' + err )
-                _consoleLog( err )
+                debugLog( 'error: ' + err )
+                debugLog( err )
                 return emit( {
                   type: 'resolve',
                   id: json.id,
@@ -249,18 +249,18 @@ async function handleLine ( line )
           const fn = eleko[ query ]
           let that = eleko
 
-          _consoleLog( query )
-          _consoleLog( fn )
+          debugLog( query )
+          debugLog( fn )
 
-          args && _consoleLog( ' == args == ' + args.length )
-          args && _consoleLog( args )
+          args && debugLog( ' == args == ' + args.length )
+          args && debugLog( args )
 
           const txArgs = args.map( function ( arg ) {
             return decodeValue( arg )
           } )
 
-          txArgs && _consoleLog( ' == txArgs == ' + txArgs.length )
-          txArgs && _consoleLog( txArgs )
+          txArgs && debugLog( ' == txArgs == ' + txArgs.length )
+          txArgs && debugLog( txArgs )
 
           let value = fn.apply(
             that,
@@ -268,7 +268,7 @@ async function handleLine ( line )
           )
 
           function finish () {
-            _consoleLog( ' == finish == ' )
+            debugLog( ' == finish == ' )
 
             emit( {
               type: 'resolve',
@@ -289,8 +289,8 @@ async function handleLine ( line )
               } )
 
               promise.catch( function ( err ) {
-                _consoleLog( 'error: ' + err )
-                _consoleLog( err )
+                debugLog( 'error: ' + err )
+                debugLog( err )
                 return emit( {
                   type: 'resolve',
                   id: json.id,
@@ -305,7 +305,7 @@ async function handleLine ( line )
         break
 
       default:
-        _consoleLog( 'unknown type: ' + type )
+        debugLog( 'unknown type: ' + type )
     }
   } catch ( err ) {
     emit( {
@@ -338,7 +338,7 @@ async function createWindow ()
     }
   } )
 
-  process.stdout.write( ' == window created == ' )
+  debugLog( ' == window created == ' )
 
   const session = mainWindow.webContents.session
 
@@ -396,8 +396,8 @@ function decodeValue ( pkg )
       })()
     `)
 
-    _consoleLog( ' == funcions == ' )
-    _consoleLog( f.toString() )
+    debugLog( ' == funcions == ' )
+    debugLog( f.toString() )
 
     return f
   }
