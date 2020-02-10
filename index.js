@@ -184,6 +184,22 @@ function launch ( options )
     const launchApi = eeto()
     launchApi.call = call
 
+    let exitTimeout
+    launchApi.exit = launchApi.close = launchApi.quit = function () {
+      const id = _id++
+
+      const json = {
+        type: 'eleko:ipc:app',
+        query: 'quit'
+      }
+
+      exitTimeout = setTimeout( function () {
+        _nz.kill()
+      }, 1000 * 3000 )
+
+      spawn.stdin.write( JSON.stringify( json ) + '\n' )
+    }
+
     ;[ 'goto', 'waitFor', 'evaluate', 'onBeforeRequest' ].forEach( function ( name ) {
       launchApi[ name ] = function ( ...args ) {
         const id = _id++
@@ -286,6 +302,7 @@ function launch ( options )
 
     spawn.on( 'exit', function ( code ) {
       console.log( 'electron spawn exited, code: ' + code )
+      clearTimeout( exitTimeout )
       launchApi.emit( 'exit', code )
     } )
 
