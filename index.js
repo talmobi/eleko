@@ -249,7 +249,7 @@ function launch ( options )
       // console.log( 'id: ' + json.id )
 
       switch ( json.type ) {
-        case 'call:response':
+        case 'response':
           const id = json.id
           const value = json.value
           const error = json.error

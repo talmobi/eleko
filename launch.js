@@ -161,7 +161,7 @@ async function handleLine ( line )
     }
   } catch ( err ) {
     emit( {
-      type: 'call:response',
+      type: 'response',
       id: json.id,
       error: serializeError( err )
     } )
