@@ -113,6 +113,69 @@ async function handleLine ( line )
           args && _consoleLog( ' == args == ' + args.length )
           args && _consoleLog( args )
 
+          args = args || []
+          const txArgs = args.map( function ( arg ) {
+            return decodeValue( arg )
+          } )
+
+          txArgs && _consoleLog( ' == txArgs == ' + txArgs.length )
+          txArgs && _consoleLog( txArgs )
+
+          let value = fn.apply(
+            that,
+            txArgs
+          )
+
+          function finish () {
+            _consoleLog( ' == finish == ' )
+
+            emit( {
+              type: 'resolve',
+              id: json.id,
+              value: value
+            } )
+          }
+
+          handlePromise()
+          async function handlePromise () {
+            if ( value && typeof value === 'object' && typeof value.then === 'function' ) {
+              // is a promise
+              const promise = value
+
+              promise.then( function ( val ) {
+                value = val
+                return handlePromise()
+              } )
+
+              promise.catch( function ( err ) {
+                _consoleLog( 'error: ' + err )
+                _consoleLog( err )
+                return emit( {
+                  type: 'resolve',
+                  id: json.id,
+                  error: serializeError( err )
+                } )
+              } )
+            } else {
+              finish()
+            }
+          }
+        }
+        break
+
+      case 'eleko:ipc:app':
+        {
+          const fn = jp.value( electron.app, query )
+
+          let that = electron.app
+
+          _consoleLog( query )
+          _consoleLog( fn )
+
+          args && _consoleLog( ' == args == ' + args.length )
+          args && _consoleLog( args )
+
+          args = args || []
           const txArgs = args.map( function ( arg ) {
             return decodeValue( arg )
           } )
@@ -173,6 +236,7 @@ async function handleLine ( line )
           args && _consoleLog( ' == args == ' + args.length )
           args && _consoleLog( args )
 
+          args = args || []
           const txArgs = args.map( function ( arg ) {
             return decodeValue( arg )
           } )
