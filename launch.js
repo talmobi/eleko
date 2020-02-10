@@ -178,7 +178,7 @@ async function handleLine ( line )
 
           let value = fn.apply(
             that,
-            txArgs
+            [ mainWindow ].concat( txArgs )
           )
 
           function finish () {
