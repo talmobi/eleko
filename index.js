@@ -5,6 +5,8 @@ const url = require( 'url' )
 const eeto = require( 'eeto' )
 
 const _nz = require( 'nozombie' )()
+const functionToString = require( 'function-to-string' )
+const { serializeError, deserializeError } = require( 'serialize-error' )
 
 process.on( 'exit', function onExit () {
   _nz.kill()
@@ -169,7 +171,9 @@ function launch ( options )
         type: 'eleko:ipc:call',
         id: id,
         query: args[ 0 ],
-        args: args.slice( 1 )
+        args: args.slice( 1 ).map( function ( arg ) {
+          return encodeValue( arg )
+        } )
       }
 
       spawn.stdin.write( JSON.stringify( json ) + '\n' )
@@ -222,7 +226,8 @@ function launch ( options )
           console.log( 'value: ' + value )
 
           const p = _promiseMap[ id ]
-          if ( error ) return p.reject( error )
+
+          if ( error ) return p.reject( deserializeError( error ) )
           p.resolve( value )
           break
 
@@ -514,4 +519,54 @@ function parseFunction ( fn, args )
   console.log( ' === parseFunction end === ' )
 
   return wrapped
+}
+
+function encodeValue ( value )
+{
+  const type = typeof value
+  let content
+  if ( type === 'object' || type === 'boolean' ) {
+    content = JSON.stringify( value )
+  } else if ( type === 'string' ) {
+    content = value
+  } else if ( type === 'number' ) {
+    content = value
+  } else if ( type === 'function' ) {
+    content = JSON.stringify(
+      functionToString( value )
+    )
+  }
+
+  return {
+    type: type,
+    content: content
+  }
+}
+
+function decodeValue ( pkg )
+{
+  const type = pkg.type
+  const content = pkg.content
+
+  if ( type === 'object' || type === 'boolean' ) {
+    return JSON.parse( content )
+  } else if ( type === 'string' ) {
+    return content
+  } else if ( type === 'number' ) {
+    return Number( content )
+  } else if ( type === 'function' ) {
+    const info = JSON.parse( content )
+    const f = eval(`
+      ;(function () {
+        return function ${ info.name || '' } ( ${ info.params.join( ', ' ) } ) {
+          ${ info.body }
+        }
+      })()
+    `)
+
+    _consoleLog( ' == funcions == ' )
+    _consoleLog( f.toString() )
+
+    return f
+  }
 }
