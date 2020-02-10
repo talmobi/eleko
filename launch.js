@@ -89,7 +89,7 @@ async function handleLine ( line )
   try {
     const type = json.type
     const query = json.query
-    const args = json.args
+    const args = json.args || []
 
     // _consoleLog( 'id: ' + json.id )
     // _consoleLog( 'type: ' + type )
@@ -113,7 +113,6 @@ async function handleLine ( line )
           args && _consoleLog( ' == args == ' + args.length )
           args && _consoleLog( args )
 
-          args = args || []
           const txArgs = args.map( function ( arg ) {
             return decodeValue( arg )
           } )
@@ -175,7 +174,6 @@ async function handleLine ( line )
           args && _consoleLog( ' == args == ' + args.length )
           args && _consoleLog( args )
 
-          args = args || []
           const txArgs = args.map( function ( arg ) {
             return decodeValue( arg )
           } )
@@ -236,7 +234,6 @@ async function handleLine ( line )
           args && _consoleLog( ' == args == ' + args.length )
           args && _consoleLog( args )
 
-          args = args || []
           const txArgs = args.map( function ( arg ) {
             return decodeValue( arg )
           } )
