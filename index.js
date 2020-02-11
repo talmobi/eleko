@@ -20,7 +20,7 @@ Object.keys( process.env ).forEach(
 )
 
 function debugLog ( ...args ) {
-  if ( !_envs.debug ) return
+  if ( !_envs.debug_eleko ) return
   console.log.apply( this, args )
 }
 
