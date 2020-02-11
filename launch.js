@@ -429,3 +429,31 @@ function decodeValue ( pkg )
     return f
   }
 }
+
+function decodeValue2 ( pkg )
+{
+  const type = pkg.type
+  const content = pkg.content
+
+  if ( type === 'object' || type === 'boolean' ) {
+    return JSON.parse( content )
+  } else if ( type === 'string' ) {
+    return content
+  } else if ( type === 'number' ) {
+    return Number( content )
+  } else if ( type === 'function' ) {
+    const info = JSON.parse( content )
+
+    // const f = eval(`
+    //   ;(function () {
+    //     return function ${ info.name || '' } ( ${ info.params.join( ', ' ) } ) {
+    //       ${ info.body }
+    //     }
+    //   })()
+    // `)
+
+    const f = Function.apply( {}, info.params.concat( [ info.body ] ) )
+
+    return f
+  }
+}
