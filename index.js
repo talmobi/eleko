@@ -41,6 +41,7 @@ api.evaluate = evaluate
 api.onBeforeRequest = onBeforeRequest
 api.getDefaultOptions = getDefaultOptions
 api.containsAds = containsAds
+api.setUserAgent = setUserAgent
 
 api.parseFunction = parseFunction
 
