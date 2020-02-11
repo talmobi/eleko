@@ -198,23 +198,52 @@ function launch ( options )
       return _promise
     }
 
+    function sendInit () {
+      const id = _id++
+
+      // sent as the first message ( BrowserWindow options )
+      const json = {
+        type: 'eleko:ipc:init',
+        id: id,
+        options: options
+      }
+
+      spawn.stdin.write( JSON.stringify( json ) + '\n' )
+    }
+
     const launchApi = eeto()
     launchApi.call = call
 
     let exitTimeout
+    let exitPromiseId
     launchApi.exit = launchApi.close = launchApi.quit = function () {
-      const id = _id++
-
-      const json = {
-        type: 'eleko:ipc:app',
-        query: 'quit'
-      }
+      let _resolve, _reject
+      const _promise = new Promise( function ( resolve, reject ) {
+        _resolve = resolve
+        _reject = reject
+      } )
 
       exitTimeout = setTimeout( function () {
         _nz.kill()
       }, 1000 * 3000 )
 
       spawn.stdin.write( JSON.stringify( json ) + '\n' )
+
+      const id = _id++
+      exitPromiseId = id
+      const json = {
+        type: 'eleko:ipc:app',
+        query: 'quit',
+        id: id
+      }
+
+      _promiseMap[ id ] = {
+        promise: _promise,
+        resolve: _resolve,
+        reject: _reject
+      }
+
+      return _promise
     }
 
     ;[ 'goto', 'waitFor', 'evaluate', 'onBeforeRequest' ].forEach( function ( name ) {
@@ -250,6 +279,8 @@ function launch ( options )
 
     const spawn = _childProcess.spawn( _electron, [ filepath ], { stdio: 'pipe', shell: false } )
     _nz.add( spawn.pid )
+
+    sendInit()
 
     let _buffer = ''
     spawn.stdout.on( 'data', function ( chunk ) {
@@ -319,6 +350,12 @@ function launch ( options )
     }
 
     spawn.on( 'exit', function ( code ) {
+      if ( exitPromiseId ) {
+        const p = _promiseMap[ exitPromiseId ]
+        exitPromiseId = undefined
+        p.resolve()
+      }
+
       console.log( 'electron spawn exited, code: ' + code )
       clearTimeout( exitTimeout )
       launchApi.emit( 'exit', code )
