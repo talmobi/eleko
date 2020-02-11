@@ -227,8 +227,6 @@ function launch ( options )
         _nz.kill()
       }, 1000 * 3000 )
 
-      spawn.stdin.write( JSON.stringify( json ) + '\n' )
-
       const id = _id++
       exitPromiseId = id
       const json = {
@@ -242,6 +240,8 @@ function launch ( options )
         resolve: _resolve,
         reject: _reject
       }
+
+      spawn.stdin.write( JSON.stringify( json ) + '\n' )
 
       return _promise
     }
