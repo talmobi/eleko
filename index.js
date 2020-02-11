@@ -285,6 +285,7 @@ function launch ( options )
 
     const spawn = _childProcess.spawn( _electron, [ filepath ], { stdio: 'pipe', shell: false } )
     _nz.add( spawn.pid )
+    launchApi.spawn = spawn
 
     sendInit()
 
