@@ -126,6 +126,49 @@ async function handleLine ( line )
         }
         break
 
+      case 'eleko:ipc:globalEvaluate':
+        {
+          const fn = decodeValue2( json.fn )
+          const fnArgs = args.map( decodeValue2 )
+          let value = fn.apply( this, fnArgs )
+
+          function finish () {
+            debugLog( ' == finish == ' )
+
+            emit( {
+              type: 'resolve',
+              id: json.id,
+              value: value
+            } )
+          }
+
+          handlePromise()
+          async function handlePromise () {
+            if ( value && typeof value === 'object' && typeof value.then === 'function' ) {
+              // is a promise
+              const promise = value
+
+              promise.then( function ( val ) {
+                value = val
+                return handlePromise()
+              } )
+
+              promise.catch( function ( err ) {
+                debugLog( 'error: ' + err )
+                debugLog( err )
+                return emit( {
+                  type: 'resolve',
+                  id: json.id,
+                  error: serializeError( err )
+                } )
+              } )
+            } else {
+              finish()
+            }
+          }
+        }
+        break
+
       case 'eleko:ipc:call':
         {
           const fn = jp.value( mainWindow, query )
