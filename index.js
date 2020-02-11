@@ -246,7 +246,13 @@ function launch ( options )
       return _promise
     }
 
-    ;[ 'goto', 'waitFor', 'evaluate', 'onBeforeRequest' ].forEach( function ( name ) {
+    ;[
+      'goto',
+      'waitFor',
+      'evaluate',
+      'onBeforeRequest',
+      'setUserAgent'
+    ].forEach( function ( name ) {
       launchApi[ name ] = function ( ...args ) {
         const id = _id++
 
