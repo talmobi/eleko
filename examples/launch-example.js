@@ -64,5 +64,22 @@ async function main ()
       v._play()
     }
   )
-}
 
+  // print video duration periodically
+  tick()
+  async function tick () {
+    const time = await launchApi.evaluate( function () {
+      const video = document.querySelector( 'video' )
+      return {
+        currentTime: video.currentTime,
+        duration: video.duration
+      }
+    } )
+
+    if ( time ) {
+      console.log( `${ time.currentTime } / ${ time.duration }` )
+    }
+
+    setTimeout( tick, 1000 )
+  }
+}
