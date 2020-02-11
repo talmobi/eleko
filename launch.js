@@ -74,7 +74,7 @@ let _buffer = ''
 process.stdin.on( 'data', function ( chunk ) {
   _buffer += chunk
 
-  if ( mainWindow ) {
+  if ( init.ready ) {
     _processBuffer()
   }
 } )
@@ -319,11 +319,13 @@ async function handleLine ( line )
   }
 }
 
-async function createWindow ()
+async function createWindow ( options )
 {
-  // Create the browser window
-  mainWindow = new BrowserWindow( {
-    show: false,
+  if ( createWindow.done ) return
+  createWindow.done = true
+
+  const opts = Object.assign( {
+    show: _envs.debug ? true : false,
     width: 800,
     height: 600,
     webPreferences: {
@@ -339,7 +341,16 @@ async function createWindow ()
       enableRemoteModule: false,
       preload: path.join( __dirname, 'preload.js' )
     }
-  } )
+  }, options )
+
+  // if ( opts.show ) {
+  if ( opts.show ) {
+    // show dock icon
+    app.dock && app.dock.show && app.dock.show()
+  }
+
+  // Create the browser window
+  mainWindow = new BrowserWindow( opts )
 
   debugLog( ' == window created == ' )
 
@@ -356,8 +367,21 @@ async function createWindow ()
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs
 app.on( 'ready', async function () {
-  createWindow()
+  init.ready = true
+
+  // process anything in the buffer now that we're ready
+  if ( _buffer ) _processBuffer()
+
+  init()
 } )
+
+function init () {
+  if ( init.done ) return
+  if ( init.ready && init.options ) {
+    init.done = true
+    createWindow()
+  }
+}
 
 // Quit when all windows are closed.
 app.on( 'window-all-closed', function () {
