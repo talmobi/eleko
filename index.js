@@ -253,7 +253,7 @@ function launch ( options )
 
       exitTimeout = setTimeout( function () {
         _nz.kill()
-      }, 1000 * 3000 )
+      }, 1000 * 3 )
 
       const id = _id++
       exitPromiseId = id
