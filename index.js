@@ -198,6 +198,33 @@ function launch ( options )
       return _promise
     }
 
+    function globalEvaluate ( ...args ) {
+      const id = _id++
+
+      let _resolve, _reject
+      const _promise = new Promise( function ( resolve, reject ) {
+        _resolve = resolve
+        _reject = reject
+      } )
+
+      _promiseMap[ id ] = {
+        promise: _promise,
+        resolve: _resolve,
+        reject: _reject
+      }
+
+      const json = {
+        type: 'eleko:ipc:globalEvaluate',
+        id: id,
+        fn: encodeValue( args[ 0 ] ),
+        args: args.slice( 1 ).map( encodeValue )
+      }
+
+      spawn.stdin.write( JSON.stringify( json ) + '\n' )
+
+      return _promise
+    }
+
     function sendInit () {
       const id = _id++
 
@@ -213,6 +240,7 @@ function launch ( options )
 
     const launchApi = eeto()
     launchApi.call = call
+    launchApi.globalEvaluate = globalEvaluate
 
     let exitTimeout
     let exitPromiseId
