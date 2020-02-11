@@ -120,6 +120,12 @@ async function handleLine ( line )
     // debugLog( 'query: ' + query )
 
     switch ( type ) {
+      case 'eleko:ipc:init':
+        {
+          createWindow( json.options )
+        }
+        break
+
       case 'eleko:ipc:call':
         {
           const fn = jp.value( mainWindow, query )
