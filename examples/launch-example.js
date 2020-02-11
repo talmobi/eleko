@@ -11,12 +11,12 @@ main()
 
 async function main ()
 {
-  const api = await eleko.launch()
-  const userAgent = await api.call( 'webContents.session.getUserAgent' )
+  const launchApi = await eleko.launch()
+  const userAgent = await launchApi.call( 'webContents.session.getUserAgent' )
   console.log( userAgent )
 
   // cancel or do something before requests
-  await api.onBeforeRequest( function ( details ) {
+  await launchApi.onBeforeRequest( function ( details ) {
     const url = details.url
 
     const shouldBlock = (
@@ -27,11 +27,14 @@ async function main ()
   } )
 
   const url = 'https://www.youtube.com/watch?v=Gu2pVPWGYMQ'
-  await api.call( 'loadURL', url )
+  await launchApi.call( 'loadURL', url )
 
   console.log( ' == PAGE LOADED == ' )
 
-  const title = await api.evaluate(
+  const now = Date.now()
+  await launchApi.waitFor( 'video' )
+
+  const title = await launchApi.evaluate(
     function ( selector ) {
       return document[ selector ]
     },
@@ -39,16 +42,10 @@ async function main ()
   )
 
   console.log( 'title: ' + title )
-  console.log( 'title: ' + title )
-  console.log( 'title: ' + title )
-  console.log( 'title: ' + title )
-  console.log( 'title: ' + title )
 
-  const now = Date.now()
-  await api.waitFor( 'video' )
   console.log( 'waited for: ' + ( Date.now() - now ) )
 
-  await api.evaluate(
+  await launchApi.evaluate(
     function () {
       const v = document.querySelector( 'video' )
       v.pause()
@@ -61,7 +58,7 @@ async function main ()
   await new Promise( r => setTimeout( r, 1000 * 5 ) )
   console.log( 'waiting done, playing...' )
 
-  await api.evaluate(
+  await launchApi.evaluate(
     function () {
       const v = document.querySelector( 'video' )
       v._play()
