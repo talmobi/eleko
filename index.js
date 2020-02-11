@@ -569,7 +569,7 @@ function waitFor ( mainWindow, query, ...args )
         )
         callback( p )
       } catch ( err ) {
-        throw 'error: waitFor query: ' + query
+        reject( err )
       }
     }
   } )
@@ -597,11 +597,15 @@ function evaluate ( mainWindow, fn, ...args )
   const fnString = parseFunction( fn, args )
 
   return new Promise( async function ( resolve, reject ) {
-    const p = await mainWindow.webContents.executeJavaScript(
-      fnString,
-      true
-    )
-    resolve( p )
+    try {
+      const p = await mainWindow.webContents.executeJavaScript(
+        fnString,
+        true
+      )
+      resolve( p )
+    } catch ( err ) {
+      reject( err )
+    }
   } )
 }
 
