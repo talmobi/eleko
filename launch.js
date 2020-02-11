@@ -12,6 +12,9 @@ const { serializeError, deserializeError } = require( 'serialize-error' )
 // Module to control application life
 const app = electron.app
 
+// hide dock icon
+app.dock && app.dock.hide && app.dock.hide()
+
 // Module to create native browser window
 const BrowserWindow = electron.BrowserWindow
 
