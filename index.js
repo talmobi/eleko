@@ -581,7 +581,26 @@ function goto ( mainWindow, url )
 
   return new Promise( async function ( resolve, reject ) {
     try {
-      const p = await mainWindow.loadURL( url )
+      const id = 'eleko-page-reload-checker:' + Date.now()
+
+      await waitFor( mainWindow, function () {
+        return !!document.location
+      } )
+
+      debugLog( ' >> goto setup href << ' )
+      await evaluate( mainWindow, function ( id, url ) {
+        const el = document.createElement( 'div' )
+        el.id = id
+        document.body.appendChild( el )
+        document.location.href = url
+      }, id, url )
+
+      debugLog( ' >> goto waiting  << ' )
+      await waitFor( mainWindow, function ( id ) {
+        const el = document.getElementById( id )
+        return document.body && document.location && !el
+      }, id )
+
       debugLog( ' >> GOTO DONE << ' )
       resolve()
     } catch ( err ) {
