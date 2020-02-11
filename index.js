@@ -274,7 +274,7 @@ function launch ( options )
         json = JSON.parse( line )
       } catch ( err ) {
         // TODO most likely regular output line (hide?)
-        return debugLog( line )
+        return console.log( line )
       }
 
       // debugLog( 'type: ' + json.type )
