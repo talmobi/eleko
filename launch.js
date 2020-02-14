@@ -49,8 +49,8 @@ debugLog( ' == launched == ' )
 
 process.on( 'uncaughtException', function ( err ) {
   try {
-    _consoleLog( err )
-    _consoleLog( 'exited electron app' )
+    console.log( err )
+    console.log( 'exited electron app' )
     emit( {
       type: 'error',
       error: serializeError( err )
@@ -198,6 +198,8 @@ async function handleLine ( line )
             txArgs
           )
 
+          console.log( value )
+
           function finish () {
             debugLog( ' == finish == ' )
 
@@ -220,8 +222,9 @@ async function handleLine ( line )
               } )
 
               promise.catch( function ( err ) {
-                debugLog( 'error: ' + err )
-                debugLog( err )
+                console.log( 'error: ' + err )
+                console.log( err )
+
                 return emit( {
                   type: 'resolve',
                   id: json.id,
