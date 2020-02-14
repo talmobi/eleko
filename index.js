@@ -118,7 +118,6 @@ function spawn ( filepath )
   const _childProcess = require( 'child_process' )
 
   const _path = require( 'path' )
-  const _nz = require( 'nozombie' )()
 
   function onExit () {
     _nz.kill()
