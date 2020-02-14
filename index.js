@@ -589,7 +589,7 @@ function goto ( mainWindow, url )
     try {
       const id = 'eleko-page-reload-checker:' + Date.now()
 
-      await waitFor( mainWindow, function () {
+      await waitFor( mainWindow, { polling: 33 }, function () {
         return !!document.location
       } )
 
@@ -602,9 +602,9 @@ function goto ( mainWindow, url )
       }, id, url )
 
       debugLog( ' >> goto waiting  << ' )
-      await waitFor( mainWindow, function ( id ) {
+      await waitFor( mainWindow, { polling: 33 }, function ( id ) {
         const el = document.getElementById( id )
-        return document.body && document.location && !el
+        return document.body && !el
       }, id )
 
       debugLog( ' >> GOTO DONE << ' )
