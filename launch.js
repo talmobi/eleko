@@ -404,6 +404,12 @@ async function createWindow ( options )
   // Create the browser window
   mainWindow = new BrowserWindow( opts )
 
+  await mainWindow.loadURL( 'about:blank' )
+
+  await eleko.waitFor( mainWindow, function () {
+    return !!document.location
+  } )
+
   debugLog( ' == window created == ' )
 
   const session = mainWindow.webContents.session
