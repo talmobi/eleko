@@ -24,9 +24,14 @@ function debugLog ( ...args ) {
   console.log.apply( this, args )
 }
 
-process.on( 'exit', function onExit () {
+process.on( 'uncaughtException', onExit )
+process.on( 'exit', onExit )
+
+function onExit () {
+  if ( onExit.done ) return
+  onExit.done = true
   _nz.kill()
-} )
+}
 
 const api = eeto()
 
