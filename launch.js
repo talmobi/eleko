@@ -417,6 +417,11 @@ async function createWindow ( options )
   // set user-agent lowest compatible
   session.setUserAgent( 'Mozilla/5.0 (https://github.com/talmobi/eleko)' )
 
+  emit( {
+    type: 'console.log',
+    args: 'window created'
+  } )
+
   // process anything in the buffer now that we're ready
   if ( _buffer ) _processBuffer()
 }
