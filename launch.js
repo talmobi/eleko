@@ -377,7 +377,7 @@ async function createWindow ( options )
   createWindow.done = true
 
   const opts = Object.assign( {
-    show: _envs.debug ? true : false,
+    show: !_envs.debug_eleko || !_envs.debug,
     width: 800,
     height: 600,
     webPreferences: {
