@@ -583,6 +583,7 @@ function waitFor ( mainWindow, query, ...args )
 function goto ( mainWindow, url )
 {
   debugLog( ' === goto === ' )
+  debugLog( 'url: ' + url )
 
   return new Promise( async function ( resolve, reject ) {
     try {
