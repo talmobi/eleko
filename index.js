@@ -141,7 +141,7 @@ function spawn ( filepath )
   _nz.add( spawn.pid )
 
   spawn.on( 'exit', function () {
-    process.removeListener( 'exit', onExit )
+    console.log( 'electron spawn exited' )
   } )
 
   return spawn
