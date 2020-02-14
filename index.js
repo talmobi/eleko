@@ -372,7 +372,8 @@ function launch ( options )
         case 'console.log':
           {
             const args = json.args
-            debugLog.apply( this, args )
+            // debugLog.apply( this, args )
+            console.log.apply( this, args )
           }
           break
 
