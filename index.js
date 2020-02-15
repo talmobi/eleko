@@ -101,52 +101,6 @@ function getDefaultOptions ()
   return Object.assign( {}, DEFAULT_OPTS )
 }
 
-function spawn ( filepath )
-{
-  // path to electron executable in node context
-  const _electron = require( 'electron' )
-
-  if ( typeof _electron !== 'string' ) {
-    debugLog( 'not a string' )
-    throw new Error(`
-      Error: trying to spawn electron inside of an existing electron context.
-      Spawn from within a node context instead.
-        ex. 'node index.js'
-    `)
-  }
-
-  const _childProcess = require( 'child_process' )
-
-  const _path = require( 'path' )
-
-  function onExit () {
-    _nz.kill()
-  }
-
-  process.on( 'exit', onExit )
-
-  // file to be run with electron
-  const mainPath = filepath
-
-  try {
-    fs.statSync( filepath )
-  } catch ( err ) {
-    throw err
-  }
-
-  const command = _electron + ' ' + mainPath
-  debugLog( 'command: ' + command )
-
-  const spawn = _childProcess.spawn( _electron, [ mainPath ], { stdio: 'inherit', shell: false } )
-  _nz.add( spawn.pid )
-
-  spawn.on( 'exit', function () {
-    console.log( 'electron spawn exited' )
-  } )
-
-  return spawn
-}
-
 function launch ( options )
 {
   return new Promise( function ( resolve, reject ) {
