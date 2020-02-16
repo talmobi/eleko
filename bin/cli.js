@@ -42,6 +42,19 @@ async function main () {
   switch ( r.selected.index ) {
     case 0:
       console.log( 'TODO create electron quickstart file' )
+      const data = fs.readFileSync( path.join( __dirname, '../electron-main.js' ), 'utf8' )
+      const destPath = path.join( process.cwd(), 'electron-main.js' )
+      try {
+        fs.statSync( destPath )
+        console.log( `aborting: file already exists at destination path: ${ destPath }` )
+      } catch ( err ) {
+        if ( err.code === 'ENOENT' ) {
+          fs.writeFileSync( path.join( process.cwd(), 'electron-main.js' ), data, 'utf8' )
+          console.log( `wrote ${ destPath }` )
+        } else {
+          throw err
+        }
+      }
       return
 
     case 1:
