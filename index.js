@@ -196,13 +196,18 @@ function launch ( options )
       spawn.stdin.write( JSON.stringify( json ) + '\n' )
     }
 
-    const launchApi = eeto()
-    launchApi.call = call
-    launchApi.globalEvaluate = globalEvaluate
+    const browser = eeto()
+
+    browser.inject = inject
+    browser.call = call
+    browser.globalEvaluate = globalEvaluate
+
+    function inject ( arg ) {
+    }
 
     let exitTimeout
     let exitPromiseId
-    launchApi.exit = launchApi.close = launchApi.quit = function () {
+    browser.exit = browser.close = browser.quit = function () {
       let _resolve, _reject
       const _promise = new Promise( function ( resolve, reject ) {
         _resolve = resolve
@@ -239,7 +244,7 @@ function launch ( options )
       'onBeforeRequest',
       'setUserAgent'
     ].forEach( function ( name ) {
-      launchApi[ name ] = function ( ...args ) {
+      browser[ name ] = function ( ...args ) {
         const id = _id++
 
         let _resolve, _reject
@@ -271,7 +276,7 @@ function launch ( options )
 
     const spawn = _childProcess.spawn( _electron, [ filepath ], { stdio: 'pipe', shell: false } )
     _nz.add( spawn.pid )
-    launchApi.spawn = spawn
+    browser.spawn = spawn
 
     sendInit()
 
@@ -335,7 +340,7 @@ function launch ( options )
           {
             const error = deserializeError( json.error )
             console.log.apply( this, error )
-            launchApi.emit( 'exit', error )
+            browser.emit( 'exit', error )
           }
           break
 
@@ -352,10 +357,10 @@ function launch ( options )
 
       console.log( 'electron spawn exited, code: ' + code )
       clearTimeout( exitTimeout )
-      launchApi.emit( 'exit', code )
+      browser.emit( 'exit', code )
     } )
 
-    resolve( launchApi )
+    resolve( browser )
   } )
 }
 
