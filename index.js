@@ -77,6 +77,7 @@ const LAUNCH_TIMEOUT_TIME = 10 * 1000
 // ref: https://github.com/google/swiftshader
 const DEFAULT_OPTS = {
   show: false,
+
   width: 800,
   height: 600,
   webPreferences: {
@@ -121,11 +122,10 @@ function launch ( options )
     const _path = require( 'path' )
 
     // file to be run with electron
-    const filepath = path.join( __dirname, 'launch.js' )
+    const filepath = path.join( __dirname, 'electron-main.js' )
 
     let _id = 1
-    const _promiseMap = {
-    }
+    const _promiseMap = {}
 
     function call ( ...args ) {
       const id = _id++
