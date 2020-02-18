@@ -273,7 +273,7 @@ async function createWindow ( options )
         const shouldBlock = await _promise
 
         if ( shouldBlock ) {
-          debugLog( ' (x) ad blocked: ' + url.slice( 0, 23 ) )
+          debugLog( ' (x) url blocked: ' + url.slice( 0, 55 ) )
           callback( { cancel: true } ) // block
         } else {
           callback( { cancel: false } ) // let through
