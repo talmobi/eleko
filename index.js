@@ -40,36 +40,15 @@ const api = eeto()
 
 module.exports = api
 
-api.spawn = spawn
 api.launch = launch
-api.createWindow = createWindow
+
 api.goto = goto
 api.waitFor = waitFor
 api.evaluate = evaluate
-api.onBeforeRequest = onBeforeRequest
-api.getDefaultOptions = getDefaultOptions
-api.containsAds = containsAds
 api.setUserAgent = setUserAgent
+api.getUserAgent = getUserAgent
 
-api.parseFunction = parseFunction
-
-api.infect = function ( mainWindow ) {
-  const infectedApi = {}
-
-  ;[
-    'goto',
-    'waitFor',
-    'evaluate',
-    'onBeforeRequest'
-  ].forEach( function ( name ) {
-    infectedApi[ name ] = function ( ...args ) {
-      args = [ mainWindow ].concat( args )
-      api[ name ].apply( this, args )
-    }
-  } )
-
-  return infectedApi
-}
+api.getDefaultOptions = getDefaultOptions
 
 const WAITFOR_TIMEOUT_TIME = 1000 * 30 // 30 seconds
 const POLL_INTERVAL = 200 // milliseconds
@@ -107,7 +86,7 @@ function getDefaultOptions ()
 
 function launch ( options )
 {
-  return new Promise( function ( resolve, reject ) {
+  return new Promise( function ( browserResolve, browserReject ) {
     // path to electron executable in node context
     const _electron = require( 'electron' )
 
@@ -127,90 +106,15 @@ function launch ( options )
     // file to be run with electron
     const filepath = path.join( __dirname, 'electron-main.js' )
 
-    let _id = 1
+    let _messageId = 1
     const _promiseMap = {}
 
-    function call ( ...args ) {
-      const id = _id++
-
-      let _resolve, _reject
-      const _promise = new Promise( function ( resolve, reject ) {
-        _resolve = resolve
-        _reject = reject
-      } )
-
-      _promiseMap[ id ] = {
-        promise: _promise,
-        resolve: _resolve,
-        reject: _reject
-      }
-
-      const json = {
-        type: 'eleko:ipc:call',
-        id: id,
-        query: args[ 0 ],
-        args: args.slice( 1 ).map( function ( arg ) {
-          return encodeValue( arg )
-        } )
-      }
-
-      spawn.stdin.write( JSON.stringify( json ) + '\n' )
-
-      return _promise
-    }
-
-    function globalEvaluate ( ...args ) {
-      const id = _id++
-
-      let _resolve, _reject
-      const _promise = new Promise( function ( resolve, reject ) {
-        _resolve = resolve
-        _reject = reject
-      } )
-
-      _promiseMap[ id ] = {
-        promise: _promise,
-        resolve: _resolve,
-        reject: _reject
-      }
-
-      const json = {
-        type: 'eleko:ipc:globalEvaluate',
-        id: id,
-        fn: encodeValue( args[ 0 ] ),
-        args: args.slice( 1 ).map( encodeValue )
-      }
-
-      spawn.stdin.write( JSON.stringify( json ) + '\n' )
-
-      return _promise
-    }
-
-    function sendInit () {
-      const id = _id++
-
-      // sent as the first message ( BrowserWindow options )
-      const json = {
-        type: 'eleko:ipc:init',
-        id: id,
-        options: options
-      }
-
-      spawn.stdin.write( JSON.stringify( json ) + '\n' )
-    }
-
     const browser = eeto()
-
-    browser.inject = inject
-    browser.call = call
-    browser.globalEvaluate = globalEvaluate
-
-    function inject ( arg ) {
-    }
+    browser._pages = []
 
     let exitTimeout
     let exitPromiseId
-    browser.exit = browser.close = browser.quit = function () {
+    browser.close = browser.exit = browser.quit = function () {
       let _resolve, _reject
       const _promise = new Promise( function ( resolve, reject ) {
         _resolve = resolve
@@ -221,15 +125,15 @@ function launch ( options )
         _nz.kill()
       }, 1000 * 3 )
 
-      const id = _id++
-      exitPromiseId = id
+      const messageId = _messageId++
+      exitPromiseId = messageId
       const json = {
-        type: 'eleko:ipc:app',
+        type: 'app',
         query: 'quit',
-        id: id
+        messageId: messageId
       }
 
-      _promiseMap[ id ] = {
+      _promiseMap[ messageId ] = {
         promise: _promise,
         resolve: _resolve,
         reject: _reject
@@ -240,15 +144,103 @@ function launch ( options )
       return _promise
     }
 
-    ;[
-      'goto',
-      'waitFor',
-      'evaluate',
-      'onBeforeRequest',
-      'setUserAgent'
-    ].forEach( function ( name ) {
-      browser[ name ] = function ( ...args ) {
-        const id = _id++
+    browser.pages = function () {
+      const messageId = _messageId++
+
+      let _resolve, _reject
+      const _promise = new Promise( function ( resolve, reject ) {
+        _resolve = resolve
+        _reject = reject
+      } )
+
+      _promiseMap[ messageId ] = {
+        promise: _promise,
+        resolve: _resolve,
+        reject: _reject
+      }
+
+      const json = {
+        type: 'browser:pages',
+        messageId: messageId
+      }
+
+      spawn.stdin.write( JSON.stringify( json ) + '\n' )
+
+      return _promise
+    }
+
+    browser.newPage = function ( options ) {
+      const messageId = _messageId++
+
+      let _resolve, _reject
+      const _promise = new Promise( function ( resolve, reject ) {
+        _resolve = resolve
+        _reject = reject
+      } )
+
+      _promiseMap[ messageId ] = {
+        promise: _promise,
+        resolve: _resolve,
+        reject: _reject
+      }
+
+      const json = {
+        type: 'browser:newPage',
+        messageId: messageId,
+        options: options
+      }
+
+      spawn.stdin.write( JSON.stringify( json ) + '\n' )
+
+      return _promise
+    }
+
+    function infectPage ( eleko_data ) {
+      const page = eeto()
+      page.pageIndex = eleko_data.pageIndex
+
+      // attach eleko helper fns
+      ;[
+        'goto',
+        'waitFor',
+        'evaluate',
+        'setUserAgent',
+        'getUserAgent'
+      ].forEach( function ( name ) {
+        page[ name ] = function ( ...args ) {
+          const messageId = _messageId++
+
+          let _resolve, _reject
+          const _promise = new Promise( function ( resolve, reject ) {
+            _resolve = resolve
+            _reject = reject
+          } )
+
+          _promiseMap[ messageId ] = {
+            promise: _promise,
+            resolve: _resolve,
+            reject: _reject
+          }
+
+          const json = {
+            type: 'page:eleko',
+            pageIndex: page.pageIndex,
+            messageId: messageId,
+
+            query: name,
+            args: args.map( function ( arg ) {
+              return encodeArg( arg )
+            } )
+          }
+
+          spawn.stdin.write( JSON.stringify( json ) + '\n' )
+
+          return _promise
+        }
+      } )
+
+      page.call = function call ( ...args ) {
+        const messageId = _messageId++
 
         let _resolve, _reject
         const _promise = new Promise( function ( resolve, reject ) {
@@ -256,18 +248,20 @@ function launch ( options )
           _reject = reject
         } )
 
-        _promiseMap[ id ] = {
+        _promiseMap[ messageId ] = {
           promise: _promise,
           resolve: _resolve,
           reject: _reject
         }
 
         const json = {
-          type: 'eleko:ipc:eleko',
-          id: id,
-          query: name,
-          args: args.map( function ( arg ) {
-            return encodeValue( arg )
+          type: 'page:query',
+          pageIndex: page.pageIndex,
+          messageId: messageId,
+
+          query: args[ 0 ],
+          args: args.slice( 1 ).map( function ( arg ) {
+            return encodeArg( arg )
           } )
         }
 
@@ -275,13 +269,14 @@ function launch ( options )
 
         return _promise
       }
-    } )
 
-    const spawn = _childProcess.spawn( _electron, [ filepath ], { stdio: 'pipe', shell: false } )
+      return page
+    }
+
+    const _env = Object.assign( {}, process.env, { launched_with_eleko: true } )
+    const spawn = _childProcess.spawn( _electron, [ filepath ], { stdio: 'pipe', shell: false, env: _env } )
     _nz.add( spawn.pid )
     browser.spawn = spawn
-
-    sendInit()
 
     let _buffer = ''
     spawn.stdout.on( 'data', function ( chunk ) {
@@ -306,28 +301,112 @@ function launch ( options )
       try {
         json = JSON.parse( line )
       } catch ( err ) {
-        // TODO most likely regular output line (hide?)
         return console.log( line )
       }
 
-      // debugLog( 'type: ' + json.type )
-      // debugLog( 'id: ' + json.id )
+      // handle error
+      {
+        const messageId = json.messageId
+        const p = _promiseMap[ messageId ]
+        const error = json.error
+        if ( error ) return p.reject( deserializeError( error ) )
+      }
 
       switch ( json.type ) {
+        // generic resolve
         case 'resolve':
           {
-            const id = json.id
+            const messageId = json.messageId
             const value = json.value
-            const error = json.error
 
-            // debugLog( 'id: ' + id )
-            // debugLog( 'value: ' + value )
-            // debugLog( 'error: ' + error )
-
-            const p = _promiseMap[ id ]
-
-            if ( error ) return p.reject( deserializeError( error ) )
+            const p = _promiseMap[ messageId ]
             p.resolve( value )
+          }
+          break
+
+        case 'app-ready':
+          return browserResolve( browser )
+
+        case 'browser:pages:response':
+          {
+            const pageIndex = json.pageIndex
+            const messageId = json.messageId
+
+            const p = _promiseMap[ messageId ]
+            p.resolve( json.pages.map( function ( page ) {
+              return infectPage( page )
+            } ) )
+          }
+          break
+
+        case 'browser:newPage:response':
+          {
+            const pageIndex = json.pageIndex
+            const messageId = json.messageId
+
+            const p = _promiseMap[ messageId ]
+            const page = infectPage( json.newPage )
+
+            browser._pages.push( page )
+            p.resolve( page )
+          }
+          break
+
+        case 'page:request':
+          {
+            debugLog( 'eleko page:request' )
+
+            const pageIndex = json.pageIndex
+            const messageId = json.messageId
+
+            const page = browser._pages.find( function ( page ) { return page.pageIndex === pageIndex } )
+
+            const req = json.details
+            req.abort = function () {
+              debugLog( 'eleko page:request abort()' )
+
+              const response = {
+                type: 'resolve',
+                messageId: json.messageId,
+                value: true
+              }
+
+              spawn.stdin.write( JSON.stringify( response ) + '\n' )
+            }
+            req.continue = function () {
+              debugLog( 'eleko page:request continue()' )
+
+              const response = {
+                type: 'resolve',
+                messageId: json.messageId,
+                value: false
+              }
+
+              spawn.stdin.write( JSON.stringify( response ) + '\n' )
+            }
+
+            // TODO should not happen, throw error?
+            // if ( !page ) return req.continue()
+            if ( !page ) throw new Error( 'page was undefined' )
+
+            // if nobody is listening, default req.continue()
+            const l = page._listeners[ 'request' ] || []
+            if ( l.length <= 0 ) return req.continue()
+
+            page.emit( 'request', req  )
+          }
+          break
+
+        case 'page:close':
+          {
+            const pageIndex = json.pageIndex
+            const messageId = json.messageId
+
+            const page = browser._pages.find( function ( page ) { return page.pageIndex === pageIndex } )
+            page.emit( 'close' )
+
+            const i = browser._pages.indexOf( page )
+            browser._pages.splice( i, 1 )
           }
           break
 
@@ -341,6 +420,8 @@ function launch ( options )
 
         case 'error':
           {
+            // TODO fix never called because of error handler
+            // above
             const error = deserializeError( json.error )
             console.log.apply( this, error )
             browser.emit( 'exit', error )
@@ -348,6 +429,8 @@ function launch ( options )
           break
 
         default:
+          // unknown type
+          console.log( 'eleko unknown type: ' + line )
       }
     }
 
@@ -362,8 +445,6 @@ function launch ( options )
       clearTimeout( exitTimeout )
       browser.emit( 'exit', code )
     } )
-
-    resolve( browser )
   } )
 }
 
@@ -464,6 +545,14 @@ function setUserAgent ( mainWindow )
   session.setUserAgent( 'Mozilla/5.0 (https://github.com/talmobi/eleko)' )
 }
 
+function getUserAgent ( mainWindow )
+{
+  const session = mainWindow.webContents.session
+
+  // set user-agent lowest compatible
+  return session.getUserAgent()
+}
+
 // mainWindow[, options], query[, ...args])
 function waitFor ( mainWindow, query, ...args )
 {
@@ -551,6 +640,11 @@ function goto ( mainWindow, url )
     try {
       const id = 'eleko-page-reload-checker:' + Date.now()
 
+      const currentURL = ( await mainWindow.getURL() ) || ''
+      if ( !( currentURL.trim() ) ) {
+        await mainWindow.loadURL( 'about:blank' )
+      }
+
       await waitFor( mainWindow, { polling: 33 }, function () {
         return !!document.location
       } )
@@ -594,28 +688,6 @@ function evaluate ( mainWindow, fn, ...args )
       reject( err )
     }
   } )
-}
-
-function onBeforeRequest ( mainWindow, filter )
-{
-  const session = mainWindow.webContents.session
-
-  // cancel or do something before requests
-  session.webRequest.onBeforeRequest(
-    function ( details, callback ) {
-      const url = details.url
-      const shouldBlock = filter( details )
-
-      if ( shouldBlock ) {
-        // block
-        debugLog( ' (x) url blocked: ' + url.slice( 0, 23 ) )
-        return callback( { cancel: true } )
-      }
-
-      // don't block
-      return callback( { cancel: false } )
-    }
-  )
 }
 
 // load adblock plus easylist to block urls related to ads
@@ -668,19 +740,19 @@ function parseFunction ( fn, args )
   return wrapped
 }
 
-function encodeValue ( value )
+function encodeArg ( arg )
 {
-  const type = typeof value
+  const type = typeof arg
   let content
   if ( type === 'object' || type === 'boolean' ) {
-    content = JSON.stringify( value )
+    content = JSON.stringify( arg )
   } else if ( type === 'string' ) {
-    content = value
+    content = arg
   } else if ( type === 'number' ) {
-    content = value
+    content = arg
   } else if ( type === 'function' ) {
     content = JSON.stringify(
-      functionToString( value )
+      functionToString( arg )
     )
   }
 
