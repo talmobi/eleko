@@ -1,3 +1,5 @@
+// test eleko electron helper functions
+
 const test = require( 'tape' )
 
 const electron = require( 'electron' )
