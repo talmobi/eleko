@@ -453,9 +453,7 @@ async function _processLine ( line )
           debugLog( 'page found' )
 
           // get the method using a jsonpath query
-          console.log( json.query )
           const fn = jp.value( page, json.query )
-          console.log( fn )
 
           // set the parent/context of the method ( when used with .call/.apply )
           let that = jp.parent( page, json.query ) || page
