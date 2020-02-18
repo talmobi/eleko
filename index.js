@@ -642,6 +642,7 @@ function goto ( mainWindow, url )
 
       const currentURL = ( await mainWindow.getURL() ) || ''
       if ( !( currentURL.trim() ) ) {
+        debugLog( 'loading about:blank' )
         await mainWindow.loadURL( 'about:blank' )
       }
 
