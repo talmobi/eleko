@@ -1,7 +1,7 @@
 {
   "name": "eleko",
   "version": "0.0.0",
-  "description": "simple electron starter project",
+  "description": "electron helper fns",
   "main": "eleko.js",
   "files": [
     "index.js",
@@ -18,7 +18,9 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "eleko"
+    "eleko",
+    "electron",
+    "puppeteer"
   ],
   "author": "talmobi <talmo.christian@gmail.com>",
   "license": "UNLICENSED",
@@ -33,7 +35,6 @@
   },
   "dependencies": {
     "eeto": "0.0.1",
-    "electron": "~7.1.11",
     "function-to-string": "~0.2.0",
     "jsonpath": "~1.0.2",
     "node-fzf": "~0.5.3",
@@ -41,6 +42,7 @@
     "serialize-error": "~5.0.0"
   },
   "devDependencies": {
+    "electron": "~7.1.11",
     "express": "~4.17.1",
     "get-port": "~5.1.1",
     "tape": "~4.13.0"
