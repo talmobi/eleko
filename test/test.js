@@ -13,7 +13,7 @@ const express = require( 'express' )
 const expressApp = express()
 const server = http.createServer( expressApp )
 
-// get available TPC port
+// get available TCP port
 const getPort = require( 'get-port' )
 
 test( 'init local test http server', async function ( t ) {
