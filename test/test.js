@@ -1,6 +1,6 @@
-const test = require( 'tape' )
+// test eleko.launch browser API
 
-const electron = require( 'electron' )
+const test = require( 'tape' )
 
 const fs = require( 'fs' )
 const path = require( 'path' )
@@ -33,238 +33,213 @@ test( 'init local test http server', async function ( t ) {
   } )
 } )
 
-process.on( 'uncaughtException', function ( error ) {
-  console.log( ' === uncaughtException === ' )
+let _browser
+let _page
+test( 'launch', async function ( t ) {
+  t.timeoutAfter( 8000 )
+  t.plan( 3 )
 
+  const browser = await eleko.launch()
+  t.ok( browser.spawn.pid )
+
+  browser.on( 'error', function ( err ) {
+    throw err
+  } )
+
+  // browser.on( 'exit', function ( code ) {
+  //   t.end()
+  // } )
+
+  const page = await browser.newPage()
+
+  _browser = browser
+  _page = page
+
+  // set user-agent lowest compatible
+  const userAgent = 'Mozilla/5.0 (https://github.com/talmobi/eleko)'
+  console.log( 'setUserAgent..' )
+  await page.setUserAgent( userAgent )
+  console.log( 'setUserAgent' )
+
+  t.equal( userAgent, await page.call( 'webContents.session.getUserAgent' ), 'user agent set OK' )
+  t.equal( userAgent, await page.getUserAgent(), 'user agent set OK' )
+} )
+
+test( 'goto local index.html', async function ( t ) {
+  // goto local index.html
+  t.plan( 1 )
+  const port = server.address().port
+  const url = `http://127.0.0.1:${ port }/index.html`
+  console.log( 'url: ' + url )
+  await _page.goto( url )
+
+  const title = await _page.evaluate( function () {
+    return document.title
+  } )
+
+  t.equal( title, 'Adorable baby giraffes', 'goto local index.html' )
+} )
+
+test( 'evaluate title with string args', async function ( t ) {
+  // evaluate title with string args
+  t.plan( 1 )
+
+  await _page.evaluate( function ( newTitle, selector ) {
+    document[ selector ] = newTitle
+  }, 'giraffe-title', 'title' )
+
+  const title = await _page.evaluate( function () {
+    return document.title
+  } )
+
+  t.equal( title, 'giraffe-title', 'evaluate title with string args' )
+} )
+
+
+test( 'evaluate title with object args', async function ( t ) {
+  // evaluate title with object args
+  t.plan( 1 )
+  await _page.evaluate( function ( data ) {
+    document[ data.selector ] = data.title
+  }, { title: 'whale-title', selector: 'title' } )
+
+  const title = await _page.evaluate( function () {
+    return document.title
+  } )
+
+  t.equal( title, 'whale-title' )
+} )
+
+
+test( 'waitFor string', async function ( t ) {
+  // waitFor string
+  t.plan( 3 )
+
+  const now = Date.now()
+  const text = await _page.evaluate( function ( data ) {
+    const el = document.querySelector( 'div[type=monkey]' )
+    return el && el.textContent
+  } )
+
+  await _page.evaluate( function ( data ) {
+    triggerWaitFor( 'monkey' )
+  } )
+
+  await _page.waitFor( 'div[type=monkey]' )
+
+  // time waited
+  const delta = Date.now() - now
+
+  const newText = await _page.evaluate( function ( data ) {
+    const el = document.querySelector( 'div[type=monkey]' )
+    return el && el.textContent
+  } )
+
+  t.ok( text === null || text === undefined, 'element did not exists yet OK' )
+  t.equal( newText, 'monkey text', 'element added later during waitFor OK' )
+  t.ok( delta >= 1000 && delta < 2000, 'timed waited reasonable' )
+} )
+
+
+test( 'waitFor function', async function ( t ) {
+  // waitFor function
+  t.plan( 3 )
+
+  const now = Date.now()
+  const text = await _page.evaluate( function ( data ) {
+    const el = document.querySelector( 'div[type=whale]' )
+    return el && el.textContent
+  } )
+
+  await _page.evaluate( function ( data ) {
+    triggerWaitFor( 'whale' )
+  } )
+
+  await _page.waitFor( function () {
+    const el = document.querySelector( 'div[type=whale]' )
+    return !!el
+  } )
+
+  // time waited
+  const delta = Date.now() - now
+
+  const newText = await _page.evaluate( function ( data ) {
+    const el = document.querySelector( 'div[type=whale]' )
+    return el && el.textContent
+  } )
+
+  t.ok( text === null || text === undefined, 'element did not exists yet OK' )
+  t.equal( newText, 'whale text', 'element added later during waitFor OK' )
+  t.ok( delta >= 1000 && delta < 2000, 'timed waited reasonable' )
+} )
+
+
+test( 'evaluate promise', async function ( t ) {
+  // evaluate promise
+  t.plan( 2 )
+
+  await _page.evaluate( function ( newTitle, selector ) {
+    document[ selector ] = newTitle
+  }, 'before-promise-title', 'title' )
+
+  const title = await _page.evaluate( function () {
+    return document.title
+  } )
+
+  await _page.evaluate( function ( newTitle, selector ) {
+    setTimeout( function () {
+      document[ selector ] = newTitle
+    }, 1000 )
+  }, 'after-promise-title', 'title' )
+
+  const newTitle = await _page.evaluate( function () {
+    return new Promise( function ( resolve, reject ) {
+      setTimeout( function () {
+        resolve( document.title )
+      }, 1000 )
+    } )
+  } )
+
+  t.equal( title, 'before-promise-title' )
+  t.equal( newTitle, 'after-promise-title' )
+} )
+
+
+test( 'close test http server', async function ( t ) {
+  // close test http server
+  t.plan( 1 )
+
+  server.close( function () {
+    t.pass( 'server closed' )
+  } )
+} )
+
+test( 'close browser', async function ( t ) {
+  t.plan( 1 )
+
+  _browser.on( 'exit', function () {
+    t.pass()
+  } )
+
+  await _browser.close()
+} )
+
+test.onFailure( async function () {
   try {
-    app.quit()
-    console.log( 'exited electron app' )
-  } catch ( err ) {
-    /* ignore */
-  }
-
-  console.log( error )
-
+    await server.close()
+  } catch ( err ) {}
+  try {
+    await _browser.close()
+  } catch ( err ) {}
   process.exit( 1 )
 } )
 
-// Module to control application life
-const app = electron.app
-
-// Module to create native browser window
-const BrowserWindow = electron.BrowserWindow
-
-// Keep a global ref of the window object, if you don't, the widow
-// will be closed automatically when the JavaScript object
-// is garbage collected
-let mainWindow
-
-async function createWindow ()
-{
-  // Create the browser window
-  mainWindow = new BrowserWindow( {
-    show: false,
-    width: 800,
-    height: 600,
-    webPreferences: {
-      autoplayPolicy: [ 'no-user-gesture-required', 'user-gesture-required', 'document-user-activation-required' ][ 2 ],
-
-      // javascript: false,
-      images: false,
-      webgl: false,
-
-      nodeIntegration: false,
-      webviewTag: false,
-      contextIsolation: true,
-      enableRemoteModule: false,
-      // preload: path.join( __dirname, 'preload.js' )
-    }
-  } )
-
-  const session = mainWindow.webContents.session
-
-  // set user-agent lowest compatible
-  session.setUserAgent( 'Mozilla/5.0 (https://github.com/talmobi/eleko)' )
-
-  test( 'goto local index.html', async function ( t ) {
-    t.plan( 1 )
-
-    const port = server.address().port
-    const url = `http://127.0.0.1:${ port }/index.html`
-    console.log( url )
-
-    await eleko.goto( mainWindow, url )
-
-    const title = await eleko.evaluate( mainWindow, function () {
-      return document.title
-    } )
-
-    t.equal( title, 'Adorable baby giraffes' )
-  } )
-
-  test( 'evaluate title with string args', async function ( t ) {
-    t.plan( 1 )
-
-    await eleko.evaluate( mainWindow, function ( newTitle, selector ) {
-      document[ selector ] = newTitle
-    }, 'giraffe-title', 'title' )
-
-    const title = await eleko.evaluate( mainWindow, function () {
-      return document.title
-    } )
-
-    t.equal( title, 'giraffe-title' )
-  } )
-
-  test( 'evaluate title with object args', async function ( t ) {
-    t.plan( 1 )
-
-    await eleko.evaluate( mainWindow, function ( data ) {
-      document[ data.selector ] = data.title
-    }, { title: 'whale-title', selector: 'title' } )
-
-    const title = await eleko.evaluate( mainWindow, function () {
-      return document.title
-    } )
-
-    t.equal( title, 'whale-title' )
-  } )
-
-  test( 'waitFor string', async function ( t ) {
-    t.plan( 3 )
-
-    const now = Date.now()
-    const text = await eleko.evaluate( mainWindow, function ( data ) {
-      const el = document.querySelector( 'div[type=monkey]' )
-      return el && el.textContent
-    } )
-
-    await eleko.evaluate( mainWindow, function ( data ) {
-      triggerWaitFor( 'monkey' )
-    } )
-
-    await eleko.waitFor( mainWindow, 'div[type=monkey]' )
-
-    // time waited
-    const delta = Date.now() - now
-
-    const newText = await eleko.evaluate( mainWindow, function ( data ) {
-      const el = document.querySelector( 'div[type=monkey]' )
-      return el && el.textContent
-    } )
-
-    t.ok( text === null || text === undefined, 'element did not exists yet OK' )
-    t.equal( newText, 'monkey text', 'element added later during waitFor OK' )
-    t.ok( delta >= 1000 && delta < 2000, 'timed waited reasonable' )
-  } )
-
-  test( 'waitFor function', async function ( t ) {
-    t.plan( 3 )
-
-    const now = Date.now()
-    const text = await eleko.evaluate( mainWindow, function ( data ) {
-      const el = document.querySelector( 'div[type=whale]' )
-      return el && el.textContent
-    } )
-
-    await eleko.evaluate( mainWindow, function ( data ) {
-      triggerWaitFor( 'whale' )
-    } )
-
-    await eleko.waitFor( mainWindow, function () {
-      const el = document.querySelector( 'div[type=whale]' )
-      return !!el
-    } )
-
-    // time waited
-    const delta = Date.now() - now
-
-    const newText = await eleko.evaluate( mainWindow, function ( data ) {
-      const el = document.querySelector( 'div[type=whale]' )
-      return el && el.textContent
-    } )
-
-    t.ok( text === null || text === undefined, 'element did not exists yet OK' )
-    t.equal( newText, 'whale text', 'element added later during waitFor OK' )
-    t.ok( delta >= 1000 && delta < 2000, 'timed waited reasonable' )
-  } )
-
-  test( 'evaluate promise', async function ( t ) {
-    t.plan( 2 )
-
-    await eleko.evaluate( mainWindow, function ( newTitle, selector ) {
-      document[ selector ] = newTitle
-    }, 'before-promise-title', 'title' )
-
-    const title = await eleko.evaluate( mainWindow, function () {
-      return document.title
-    } )
-
-    await eleko.evaluate( mainWindow, function ( newTitle, selector ) {
-      setTimeout( function () {
-        document[ selector ] = newTitle
-      }, 1000 )
-    }, 'after-promise-title', 'title' )
-
-    const newTitle = await eleko.evaluate( mainWindow, function () {
-      return new Promise( function ( resolve, reject ) {
-        setTimeout( function () {
-          resolve( document.title )
-        }, 1000 )
-      } )
-    } )
-
-    t.equal( title, 'before-promise-title' )
-    t.equal( newTitle, 'after-promise-title' )
-  } )
-
-  test( 'close test http server', function ( t ) {
-    t.plan( 1 )
-
-    server.close( function () {
-      t.pass( 'server closed' )
-    } )
-  } )
-
-  test.onFinish( function () {
-    app.quit()
-  } )
-
-  // Open the DevTools
-  // mainWindow.webContents.openDevTools()
-
-  // Emitted when the window is closed
-  mainWindow.on( 'closed', function () {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element
-    mainWindow = null
-  } )
-}
-
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs
-app.on( 'ready', async function () {
-  createWindow()
+test.onFinish( async function () {
+  try {
+    await server.close()
+  } catch ( err ) {}
+  try {
+    await _browser.close()
+  } catch ( err ) {}
+  process.exit()
 } )
-
-// Quit when all windows are closed.
-app.on( 'window-all-closed', function () {
-  // On OS X it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
-  // if ( process.platform !== 'darwin' ) {
-  //    app.quit()
-  // }
-
-  app.quit()
-})
-
-app.on( 'activate', function () {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if ( mainWindow === null ) {
-    createWindow()
-  }
-})
-
