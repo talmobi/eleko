@@ -691,34 +691,6 @@ function evaluate ( mainWindow, fn, ...args )
   } )
 }
 
-// load adblock plus easylist to block urls related to ads
-let easyList
-try {
-  easyList = fs.readFileSync(
-    path.join( __dirname, './easylist.txt' ), 'utf8'
-  ).split( /\r?\n\r?/ )
-} catch ( err ) {
-  debugLog( 'failed to load easylist.txt ( try downloading with "npm run download-easylist" )' )
-  easyList = []
-}
-
-// helper function for simple ad detection
-function containsAds ( url )
-{
-  if ( !easyList ) return false
-
-  url = String( url )
-
-  for ( let i = 0; i < easyList.length; i++ ) {
-    const item = easyList[ i ] || ''
-    if ( item.length > 3 && url.indexOf( item ) >= 0 ) {
-      return true
-    }
-  }
-
-  return false
-}
-
 function parseFunction ( fn, args )
 {
   const fnString = fn.toString()
