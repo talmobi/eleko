@@ -243,6 +243,11 @@ async function createWindow ( options )
     session.webRequest.onBeforeRequest(
       async function ( details, callback ) {
         let url = details.url
+
+        if ( url.indexOf( 'devtools' )  === 0 ) {
+          return callback( { cancel: false } )
+        }
+
         debugLog( ' == onBeforeRequest: ' + url.slice( 0, 23 ) )
 
         let _resolve, _reject
