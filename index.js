@@ -20,14 +20,17 @@ Object.keys( process.env ).forEach(
 )
 
 function debugLog ( ...args ) {
-  if ( !_envs.debug_eleko ) return
+  if ( !_envs.debug ) return
   console.log.apply( this, args )
 }
 
 process.on( 'uncaughtException', onExit )
 process.on( 'exit', onExit )
 
-function onExit () {
+function onExit ( err ) {
+  console.log( 'eleko exited' )
+  if ( err ) console.log( err )
+
   if ( onExit.done ) return
   onExit.done = true
   _nz.kill()
