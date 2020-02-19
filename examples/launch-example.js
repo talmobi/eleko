@@ -7,6 +7,22 @@ const redstar = require( 'redstar' )
 const fs = require( 'fs' )
 const path = require( 'path' )
 
+const assert = require( 'assert' )
+
+const adBlockClient = require( 'ad-block-js' ).create()
+fs.readFileSync(
+  path.join( __dirname, '../easylist.txt' ), 'utf8'
+)
+.split( /\r?\n/ )
+.forEach( function ( rule ) {
+  adBlockClient.add( rule )
+} )
+
+function containsAds ( url ) {
+  console.log( 'calling containsAds: ' + url )
+  return adBlockClient.matches( url )
+}
+
 main()
 
 async function main ()
