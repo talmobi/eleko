@@ -27,30 +27,46 @@ main()
 
 async function main ()
 {
-  const launchApi = await eleko.launch()
-  const userAgent = await launchApi.call( 'webContents.session.getUserAgent' )
-  console.log( userAgent )
+  const browser = await eleko.launch()
+  const page = await browser.newPage()
+
+  const userAgent = await page.call( 'webContents.session.getUserAgent' )
+
+  // assert.equal( userAgent, ( await page.getUserAgent() ) )
+  console.log( 'userAgent: ' + userAgent )
 
   // cancel or do something before requests
-  await launchApi.onBeforeRequest( function ( details ) {
-    const url = details.url
+  page.on( 'request', function ( req ) {
+    const url = req.url
+    const resourceType = req.resourceType
 
     const shouldBlock = (
-      eleko.containsAds( url )
+      resourceType === 'image' ||
+      containsAds( url )
     )
 
-    return shouldBlock
+    console.log( 'url: ' + url )
+    console.log( 'contains ads: ' + containsAds( url ) )
+
+    if ( shouldBlock ) return req.abort()
+    req.continue()
   } )
 
+  console.log( ' == GIRAFFE == ' )
+
   const url = 'https://www.youtube.com/watch?v=Gu2pVPWGYMQ'
-  await launchApi.call( 'loadURL', url )
+  await page.goto( url )
 
   console.log( ' == PAGE LOADED == ' )
 
   const now = Date.now()
-  await launchApi.waitFor( 'video' )
+  await page.waitFor( 'video' )
 
-  const title = await launchApi.evaluate(
+  await page.waitFor( function () {
+    return document.title.toLowerCase() !== 'youtube'
+  } )
+
+  const title = await page.evaluate(
     function ( selector ) {
       return document[ selector ]
     },
@@ -58,10 +74,9 @@ async function main ()
   )
 
   console.log( 'title: ' + title )
-
   console.log( 'waited for: ' + ( Date.now() - now ) )
 
-  await launchApi.evaluate(
+  await page.evaluate(
     function () {
       const v = document.querySelector( 'video' )
       v.pause()
@@ -70,11 +85,7 @@ async function main ()
     }
   )
 
-  console.log( 'waiting 5 seconds' )
-  await new Promise( r => setTimeout( r, 1000 * 5 ) )
-  console.log( 'waiting done, playing...' )
-
-  await launchApi.evaluate(
+  await page.evaluate(
     function () {
       const v = document.querySelector( 'video' )
       v._play()
@@ -84,7 +95,7 @@ async function main ()
   // print video duration periodically
   tick()
   async function tick () {
-    const time = await launchApi.evaluate( function () {
+    const time = await page.evaluate( function () {
       const video = document.querySelector( 'video' )
       return {
         currentTime: video.currentTime,
