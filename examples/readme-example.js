@@ -2,36 +2,28 @@
 const electron = require( 'electron' )
 const eleko = require( '../index.js' )
 
+// Module to control application life
 const app = electron.app
+// Module to create native browser window
+const BrowserWindow = electron.BrowserWindow
 
-const adBlockClient = require( 'ad-block-js' ).create()
-fs.readFileSync(
-  path.join( __dirname, '../easylist.txt' ), 'utf8'
-)
-.split( /\r?\n/ )
-.forEach( function ( rule ) {
-  adBlockClient.add( rule )
-} )
-
-function containsAds ( url ) {
-  console.log( 'calling containsAds: ' + url.slice( 0, 55 ) )
-  return adBlockClient.matches( url )
-}
+app.on( 'ready', main )
 
 let mainWindow
-;(async function () {
+async function main () {
   // launch BrowserWindow with eleko.getDefaultOptions()
-  mainWindow = await eleko.launch( electron )
+  mainWindow = new BrowserWindow( eleko.getDefaultOptions() )
 
   // block ads using a subset of easylist
-  mainWindow.session.webRequest.onBeforeRequest(
-    function ( details, callback ) {
-      const url = details.url
+  eleko.onrequest( mainWindow, function ( req ) {
+      const url = req.url
       const shouldBlock = containsAds( url )
-      if ( shouldBlock ) return callback( { cancel: true })
-      return callback( { cancel: false })
-    }
-  )
+      if ( shouldBlock ) {
+        console.log( '(x) blocked url: ' + url.slice( 0, 45 ) )
+        return req.abort()
+      }
+      return req.continue()
+  } )
 
   const url = 'https://www.youtube.com/watch?v=Gu2pVPWGYMQ'
   await eleko.goto( mainWindow, url )
@@ -54,6 +46,13 @@ let mainWindow
     return document.title
   } )
   console.log( 'title: ' + title )
+
+  // waitFor function
+  await eleko.waitFor( mainWindow, function () {
+    const el = document.querySelector( 'video' )
+    // wait until we can play video
+    return el && el.readyState === 4 // HAVE_ENOUGH_DATA
+  } )
 
   // evaluate with args ( play video )
   await eleko.evaluate( mainWindow, function ( selector, data ) {
@@ -80,4 +79,19 @@ let mainWindow
 
     setTimeout( tick, 1000 )
   }
-} )()
+}
+
+function containsAds ( url ) {
+  return adBlockClient.matches( url )
+}
+
+const fs = require( 'fs' )
+const path = require( 'path' )
+const adBlockClient = require( 'ad-block-js' ).create()
+fs.readFileSync(
+  path.join( __dirname, '../easylist.txt' ), 'utf8'
+)
+.split( /\r?\n/ )
+.forEach( function ( rule ) {
+  adBlockClient.add( rule )
+} )
