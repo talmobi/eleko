@@ -4,8 +4,7 @@
 // ( use the helper functions shown in launch-example.js instead
 // as much as possible, this mainly only for demonstration )
 
-const nfzf = require( 'node-fzf' )
-const redstar = require( 'redstar' )
+const eleko = require( '../index.js' )
 
 const fs = require( 'fs' )
 const path = require( 'path' )
@@ -15,17 +14,18 @@ const path = require( 'path' )
 module.exports.containsAds = containsAds
 
 if ( require.main === module ) {
+  // don't run the main fn when we use the hacky way to require containsAds within the spawned electron process
   main()
 }
 
 async function main ()
 {
+  // make sure you have electron installed
+  // npm install --save electron ( tested on 7.1.11 )
   const browser = await eleko.launch()
   const page = await browser.newPage()
 
   const userAgent = await page.call( 'webContents.session.getUserAgent' )
-
-  // assert.equal( userAgent, ( await page.getUserAgent() ) )
   console.log( 'userAgent: ' + userAgent )
 
   // bit of a hacky way to define the onBeforeRequest callback

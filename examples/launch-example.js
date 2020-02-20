@@ -10,8 +10,7 @@
 // page.setUserAgent( userAgent )
 // page.getUserAgent()
 
-const nfzf = require( 'node-fzf' )
-const redstar = require( 'redstar' )
+const eleko = require( '../index.js' )
 
 const fs = require( 'fs' )
 const path = require( 'path' )
@@ -20,12 +19,12 @@ main()
 
 async function main ()
 {
+  // make sure you have electron installed
+  // npm install --save electron ( tested on 7.1.11 )
   const browser = await eleko.launch()
   const page = await browser.newPage()
 
-  const userAgent = await page.call( 'webContents.session.getUserAgent' )
-
-  // assert.equal( userAgent, ( await page.getUserAgent() ) )
+  const userAgent = await page.getUserAgent()
   console.log( 'userAgent: ' + userAgent )
 
   // cancel or do something before requests
