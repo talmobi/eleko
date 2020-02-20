@@ -85,7 +85,7 @@ function getDefaultOptions ()
   return Object.assign( {}, DEFAULT_OPTS )
 }
 
-function launch ( options )
+function launch ( launchOptions )
 {
   return new Promise( function ( browserResolve, browserReject ) {
     // path to electron executable in node context
@@ -278,6 +278,12 @@ function launch ( options )
     const spawn = _childProcess.spawn( _electron, [ filepath ], { stdio: 'pipe', shell: false, env: _env } )
     _nz.add( spawn.pid )
     browser.spawn = spawn
+
+    const initData = {
+      type: 'init',
+      launchOptions: launchOptions
+    }
+    spawn.stdin.write( JSON.stringify( initData ) + '\n' )
 
     let _buffer = ''
     spawn.stdout.on( 'data', function ( chunk ) {
