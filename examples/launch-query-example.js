@@ -7,22 +7,6 @@ const redstar = require( 'redstar' )
 const fs = require( 'fs' )
 const path = require( 'path' )
 
-const assert = require( 'assert' )
-
-const adBlockClient = require( 'ad-block-js' ).create()
-fs.readFileSync(
-  path.join( __dirname, '../easylist.txt' ), 'utf8'
-)
-.split( /\r?\n/ )
-.forEach( function ( rule ) {
-  adBlockClient.add( rule )
-} )
-
-function containsAds ( url ) {
-  console.log( 'calling containsAds' )
-  return adBlockClient.matches( url )
-}
-
 // bit of a hacky way to expose function we will use in
 // onBeforeRequest callback
 module.exports.containsAds = containsAds
@@ -161,4 +145,18 @@ async function main ()
 
     setTimeout( tick, 1000 )
   }
+}
+
+const adBlockClient = require( 'ad-block-js' ).create()
+fs.readFileSync(
+  path.join( __dirname, '../easylist.txt' ), 'utf8'
+)
+.split( /\r?\n/ )
+.forEach( function ( rule ) {
+  adBlockClient.add( rule )
+} )
+
+function containsAds ( url ) {
+  console.log( 'calling containsAds' )
+  return adBlockClient.matches( url )
 }
