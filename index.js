@@ -747,8 +747,11 @@ function onrequest ( mainWindow, listener )
       const req = details
       const url = details.url
 
-      // special case always allow devtools
-      if ( url.indexOf( 'devtools' )  === 0 ) {
+      // special cases to always allow
+      if ( url.indexOf( 'devtools' ) === 0 ) {
+        return callback( { cancel: false } )
+      }
+      if ( url.indexOf( 'about:blank' ) === 0 ) {
         return callback( { cancel: false } )
       }
 

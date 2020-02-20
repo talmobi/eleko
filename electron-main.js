@@ -251,7 +251,11 @@ async function createWindow ( options )
       async function ( details, callback ) {
         let url = details.url
 
-        if ( url.indexOf( 'devtools' )  === 0 ) {
+        // special cases to always allow
+        if ( url.indexOf( 'devtools' ) === 0 ) {
+          return callback( { cancel: false } )
+        }
+        if ( url.indexOf( 'about:blank' ) === 0 ) {
           return callback( { cancel: false } )
         }
 
