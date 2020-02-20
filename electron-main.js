@@ -419,20 +419,26 @@ async function _processLine ( line )
             } )
           }
 
-          handlePromise()
-          async function handlePromise () {
+          debugLog( 'value: ' + value )
+
+          _resolve()
+          async function _resolve () {
             if ( value && typeof value === 'object' && typeof value.then === 'function' ) {
               // is a promise
               const promise = value
 
-              promise.then( function ( val ) {
-                value = val
-                return handlePromise()
+              promise.then( function ( newValue ) {
+                debugLog( 'promise:then' )
+                value = newValue
+                return _resolve()
               } )
 
               promise.catch( function ( err ) {
-                debugLog( 'error: ' + err )
-                debugLog( err )
+                debugLog( 'promise:catch' )
+
+                console.log( 'error: ' + err )
+                console.log( err )
+
                 return emit( {
                   type: 'resolve',
                   messageId: json.messageId,
