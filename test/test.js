@@ -50,7 +50,14 @@ test( 'launch', async function ( t ) {
   //   t.end()
   // } )
 
-  const page = await browser.newPage()
+  const page = await browser.newPage(
+    {
+      show: true,
+      webPreferences: {
+        images: true
+      }
+    }
+  )
 
   _browser = browser
   _page = page
