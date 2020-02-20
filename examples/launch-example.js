@@ -19,7 +19,7 @@ fs.readFileSync(
 } )
 
 function containsAds ( url ) {
-  console.log( 'calling containsAds: ' + url )
+  console.log( 'calling containsAds: ' + url.slice( 0, 55 ) )
   return adBlockClient.matches( url )
 }
 
