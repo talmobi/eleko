@@ -403,6 +403,10 @@ function launch ( options )
             // if ( !page ) return req.continue()
             if ( !page ) throw new Error( 'page was undefined' )
 
+            if ( typeof page.onrequest === 'function' ) {
+              return page.onrequest( req )
+            }
+
             // if nobody is listening, default req.continue()
             const l = page._listeners[ 'request' ] || []
             if ( l.length <= 0 ) return req.continue()
