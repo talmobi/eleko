@@ -1,5 +1,8 @@
-const electron = require( 'electron' )
-const eleko = require( '../index.js' )
+// tests the launch api and its page.call function
+// to call specific methods on the electron mainWindow object
+// page.call( <String>jsonpath-selector on mainWindow, ...args )
+// ( use the helper functions shown in launch-example.js instead
+// as much as possible, this mainly only for demonstration )
 
 const nfzf = require( 'node-fzf' )
 const redstar = require( 'redstar' )

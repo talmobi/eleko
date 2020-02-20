@@ -1,5 +1,14 @@
-const electron = require( 'electron' )
-const eleko = require( '../index.js' )
+// tests the launch api and its small subet of helper fn's
+// page.on( 'request', function ( req ) { ... } )
+// or
+// page.onrequest = function ( req ) { ... }
+//
+// page.goto( ... )
+// page.waitFor( <String>querySelector or <Function>evaluate )
+// page.evaluate
+//
+// page.setUserAgent( userAgent )
+// page.getUserAgent()
 
 const nfzf = require( 'node-fzf' )
 const redstar = require( 'redstar' )
