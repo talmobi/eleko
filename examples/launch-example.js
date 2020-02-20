@@ -76,12 +76,21 @@ async function main ()
   console.log( 'title: ' + title )
   console.log( 'waited for: ' + ( Date.now() - now ) )
 
-  await page.evaluate(
+  await page.waitFor(
     function () {
       const v = document.querySelector( 'video' )
-      v.pause()
-      v._play = v.play
-      v.play = function () {}
+      if ( v ) {
+        v.pause()
+
+        // hide play fn so that YouTube's own scripts won't
+        // auto play the video
+        if ( !v._play ) {
+          v._play = v.play
+          v.play = function () {}
+        }
+      }
+      // wait until page can be played
+      return v && v.readyState === 4 // HAVE_ENOUGH_DATA
     }
   )
 
