@@ -455,6 +455,8 @@ async function _processLine ( line )
       // use jsonpath to call methods on the page object
       case 'page:query':
         {
+          debugLog( 'page:query' )
+
           const pageIndex = json.pageIndex
           const page = _pages.find( function ( page ) { return page._eleko_data.pageIndex === json.pageIndex } )
 
@@ -487,6 +489,8 @@ async function _processLine ( line )
             parsedArgs
           )
 
+          debugLog( 'value: ' + value )
+
           _resolve()
           async function _resolve () {
             // await promise values before resolving through ipc
@@ -495,11 +499,14 @@ async function _processLine ( line )
               const promise = value
 
               promise.then( function ( newValue ) {
+                debugLog( 'promise:then' )
                 value = newValue
                 return _resolve()
               } )
 
               promise.catch( function ( err ) {
+                debugLog( 'promise:catch' )
+
                 console.log( 'error: ' + err )
                 console.log( err )
 
@@ -571,6 +578,8 @@ async function _processLine ( line )
             [ page ].concat( parsedArgs )
           )
 
+          debugLog( 'value: ' + value )
+
           _resolve()
           async function _resolve () {
             // await promise values before resolving through ipc
@@ -579,11 +588,14 @@ async function _processLine ( line )
               const promise = value
 
               promise.then( function ( newValue ) {
+                debugLog( 'promise:then' )
                 value = newValue
                 return _resolve()
               } )
 
               promise.catch( function ( err ) {
+                debugLog( 'promise:catch' )
+
                 console.log( 'error: ' + err )
                 console.log( err )
 
