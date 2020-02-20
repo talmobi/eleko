@@ -283,7 +283,6 @@ async function createWindow ( options )
   } )
 }
 
-
 function parseArg ( arg )
 {
   const type = arg.type
