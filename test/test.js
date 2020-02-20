@@ -95,7 +95,6 @@ test( 'evaluate title with string args', async function ( t ) {
   t.equal( title, 'giraffe-title', 'evaluate title with string args' )
 } )
 
-
 test( 'evaluate title with object args', async function ( t ) {
   // evaluate title with object args
   t.plan( 1 )
@@ -109,7 +108,6 @@ test( 'evaluate title with object args', async function ( t ) {
 
   t.equal( title, 'whale-title' )
 } )
-
 
 test( 'waitFor string', async function ( t ) {
   // waitFor string
@@ -139,7 +137,6 @@ test( 'waitFor string', async function ( t ) {
   t.equal( newText, 'monkey text', 'element added later during waitFor OK' )
   t.ok( delta >= 1000 && delta < 2000, 'timed waited reasonable' )
 } )
-
 
 test( 'waitFor function', async function ( t ) {
   // waitFor function
@@ -173,7 +170,6 @@ test( 'waitFor function', async function ( t ) {
   t.ok( delta >= 1000 && delta < 2000, 'timed waited reasonable' )
 } )
 
-
 test( 'evaluate promise', async function ( t ) {
   // evaluate promise
   t.plan( 2 )
@@ -203,7 +199,6 @@ test( 'evaluate promise', async function ( t ) {
   t.equal( title, 'before-promise-title' )
   t.equal( newTitle, 'after-promise-title' )
 } )
-
 
 test( 'close test http server', async function ( t ) {
   // close test http server
