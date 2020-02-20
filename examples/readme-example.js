@@ -4,16 +4,34 @@ const eleko = require( '../index.js' )
 
 const app = electron.app
 
+const adBlockClient = require( 'ad-block-js' ).create()
+fs.readFileSync(
+  path.join( __dirname, '../easylist.txt' ), 'utf8'
+)
+.split( /\r?\n/ )
+.forEach( function ( rule ) {
+  adBlockClient.add( rule )
+} )
+
+function containsAds ( url ) {
+  console.log( 'calling containsAds: ' + url.slice( 0, 55 ) )
+  return adBlockClient.matches( url )
+}
+
 let mainWindow
 ;(async function () {
   // launch BrowserWindow with eleko.getDefaultOptions()
   mainWindow = await eleko.launch( electron )
 
   // block ads using a subset of easylist
-  eleko.onBeforeRequest( mainWindow, function ( details ) {
-      const shouldBlock = eleko.containsAds( details.url )
-      return shouldBlock
-  } )
+  mainWindow.session.webRequest.onBeforeRequest(
+    function ( details, callback ) {
+      const url = details.url
+      const shouldBlock = containsAds( url )
+      if ( shouldBlock ) return callback( { cancel: true })
+      return callback( { cancel: false })
+    }
+  )
 
   const url = 'https://www.youtube.com/watch?v=Gu2pVPWGYMQ'
   await eleko.goto( mainWindow, url )
