@@ -207,6 +207,205 @@ test( 'evaluate promise', async function ( t ) {
   t.equal( newTitle, 'after-promise-title' )
 } )
 
+test( 'page.onrequest', async function ( t ) {
+  t.timeoutAfter( 1000 * 10 )
+  t.plan( 8 + 3 + 3 + 1 ) // +3 for every onrequest handler
+
+  // goto local index.html
+  const port = server.address().port
+  const url = `http://127.0.0.1:${ port }/images.html`
+  console.log( 'url: ' + url )
+
+  let dragoniteCounter = 0
+  let tideAdCounter = 0
+
+  _page.onrequest = function ( req ) {
+    console.log( ' == MONKEY ON REQUEST == ' )
+    console.log( 'url: ' + req.url  )
+    t.pass( 'MONKEY REQUEST CALLED' )
+
+    const url = req.url
+    if ( url.indexOf( 'dragonite.gif' ) >= 0 ) dragoniteCounter++
+    if ( url.indexOf( 'tide-ad.gif' ) >= 0 ) tideAdCounter++
+
+    req.continue()
+  }
+
+  await _page.goto( url )
+  console.log( ' == FIRST GOTO DONE == ' )
+
+  await new Promise( function ( r ) { setTimeout( r, 1000 ) } )
+
+  let data
+  data = await _page.evaluate( function () {
+    const dragonite = document.getElementById( 'dragonite' )
+    const tideAd = document.getElementById( 'tide-ad' )
+
+    return {
+      dragonite: {
+        onLoadCalled: !!dragonite.onLoadCalled,
+        onErrorCalled: !!dragonite.onErrorCalled
+      },
+      tideAd: {
+        onLoadCalled: !!tideAd.onLoadCalled,
+        onErrorCalled: !!tideAd.onErrorCalled
+      }
+    }
+  } )
+
+  t.ok( data.dragonite.onLoadCalled, 'dragonite loaded' )
+  t.notOk( data.dragonite.onErrorCalled, 'dragonite error-free' )
+
+  t.ok( data.tideAd.onLoadCalled, 'tideAd loaded' )
+  t.notOk( data.tideAd.onErrorCalled, 'tideAd error-free' )
+
+  _page.onrequest = function ( req ) {
+    console.log( ' == GIRAFFE ON REQUEST == ' )
+    console.log( 'url: ' + req.url  )
+    t.pass( 'GIRAFFE REQUEST CALLED' )
+
+    const url = req.url
+    if ( url.indexOf( 'dragonite.gif' ) >= 0 ) dragoniteCounter++
+    if ( url.indexOf( 'tide-ad.gif' ) >= 0 ) tideAdCounter++
+
+    if ( url.indexOf( 'tide-ad.gif' ) >= 0 ) return req.abort()
+
+    req.continue()
+  }
+
+  await _page.goto( url )
+  console.log( ' == SECOND GOTO DONE == ' )
+
+  await new Promise( function ( r ) { setTimeout( r, 1000 ) } )
+
+  data = await _page.evaluate( function () {
+    const dragonite = document.getElementById( 'dragonite' )
+    const tideAd = document.getElementById( 'tide-ad' )
+
+    return {
+      dragonite: {
+        onLoadCalled: !!dragonite.onLoadCalled,
+        onErrorCalled: !!dragonite.onErrorCalled
+      },
+      tideAd: {
+        onLoadCalled: !!tideAd.onLoadCalled,
+        onErrorCalled: !!tideAd.onErrorCalled
+      }
+    }
+  } )
+
+  t.ok( data.dragonite.onLoadCalled, 'dragonite loaded' )
+  t.notOk( data.dragonite.onErrorCalled, 'dragonite error-free' )
+
+  // NOTE tile-ad should not have loaded this time
+  t.notOk( data.tideAd.onLoadCalled, 'tideAd did not load' )
+  t.ok( data.tideAd.onErrorCalled, 'tideAd has errors' )
+
+  // clear request handler at end
+  _page.onrequest = undefined
+  t.equal( _page.onrequest, undefined )
+} )
+
+test( 'page.on( "request", ... )', async function ( t ) {
+  t.timeoutAfter( 1000 * 10 )
+  t.plan( 8 + 3 + 3 + 1 ) // +3 for every onrequest handler
+
+  // goto local index.html
+  const port = server.address().port
+  const url = `http://127.0.0.1:${ port }/images.html`
+  console.log( 'url: ' + url )
+
+  let dragoniteCounter = 0
+  let tideAdCounter = 0
+
+  let offOnRequest = _page.on( 'request', function ( req ) {
+    console.log( ' == MONKEY ON REQUEST == ' )
+    console.log( 'url: ' + req.url  )
+    t.pass( 'MONKEY REQUEST CALLED' )
+
+    const url = req.url
+    if ( url.indexOf( 'dragonite.gif' ) >= 0 ) dragoniteCounter++
+    if ( url.indexOf( 'tide-ad.gif' ) >= 0 ) tideAdCounter++
+
+    req.continue()
+  } )
+
+  await _page.goto( url )
+  console.log( ' == FIRST GOTO DONE == ' )
+
+  await new Promise( function ( r ) { setTimeout( r, 1000 ) } )
+
+  let data
+  data = await _page.evaluate( function () {
+    const dragonite = document.getElementById( 'dragonite' )
+    const tideAd = document.getElementById( 'tide-ad' )
+
+    return {
+      dragonite: {
+        onLoadCalled: !!dragonite.onLoadCalled,
+        onErrorCalled: !!dragonite.onErrorCalled
+      },
+      tideAd: {
+        onLoadCalled: !!tideAd.onLoadCalled,
+        onErrorCalled: !!tideAd.onErrorCalled
+      }
+    }
+  } )
+
+  t.ok( data.dragonite.onLoadCalled, 'dragonite loaded' )
+  t.notOk( data.dragonite.onErrorCalled, 'dragonite error-free' )
+
+  t.ok( data.tideAd.onLoadCalled, 'tideAd loaded' )
+  t.notOk( data.tideAd.onErrorCalled, 'tideAd error-free' )
+
+  offOnRequest() // remove previous handler first
+  offOnRequest = _page.on( 'request', function ( req ) {
+    console.log( ' == GIRAFFE ON REQUEST == ' )
+    console.log( 'url: ' + req.url  )
+    t.pass( 'GIRAFFE REQUEST CALLED' )
+
+    const url = req.url
+    if ( url.indexOf( 'dragonite.gif' ) >= 0 ) dragoniteCounter++
+    if ( url.indexOf( 'tide-ad.gif' ) >= 0 ) tideAdCounter++
+
+    if ( url.indexOf( 'tide-ad.gif' ) >= 0 ) return req.abort()
+
+    req.continue()
+  } )
+
+  await _page.goto( url )
+  console.log( ' == SECOND GOTO DONE == ' )
+
+  await new Promise( function ( r ) { setTimeout( r, 1000 ) } )
+
+  data = await _page.evaluate( function () {
+    const dragonite = document.getElementById( 'dragonite' )
+    const tideAd = document.getElementById( 'tide-ad' )
+
+    return {
+      dragonite: {
+        onLoadCalled: !!dragonite.onLoadCalled,
+        onErrorCalled: !!dragonite.onErrorCalled
+      },
+      tideAd: {
+        onLoadCalled: !!tideAd.onLoadCalled,
+        onErrorCalled: !!tideAd.onErrorCalled
+      }
+    }
+  } )
+
+  t.ok( data.dragonite.onLoadCalled, 'dragonite loaded' )
+  t.notOk( data.dragonite.onErrorCalled, 'dragonite error-free' )
+
+  // NOTE tile-ad should not have loaded this time
+  t.notOk( data.tideAd.onLoadCalled, 'tideAd did not load' )
+  t.ok( data.tideAd.onErrorCalled, 'tideAd has errors' )
+
+  // clear request handler at end
+  offOnRequest()
+  t.equal( _page._listeners[ 'request' ].length, 0 )
+} )
+
 test( 'close test http server', async function ( t ) {
   // close test http server
   t.plan( 1 )
