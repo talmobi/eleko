@@ -18,6 +18,9 @@ const BrowserWindow = electron.BrowserWindow
 const eleko = require( './index.js' )
 const jp = require( 'jsonpath' )
 
+// is this needed?
+let _launchOptions = {}
+
 process.on( 'uncaughtException', function ( error ) {
   console.log( ' === uncaughtException === ' )
   console.log( error )
@@ -345,6 +348,14 @@ async function _processLine ( line )
     // debugLog( 'query: ' + query )
 
     switch ( type ) {
+      // init has launch options etc, should be first
+      case 'init':
+        {
+          // TODO, needed?
+          _launchOptions = json.launchOptions
+        }
+        break
+
       // generic resolve
       case 'resolve':
         {
