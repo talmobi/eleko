@@ -411,6 +411,7 @@ async function _processLine ( line )
 
           function finish () {
             debugLog( ' == finish == ' )
+            debugLog( 'finish value: ' + value )
 
             emit( {
               type: 'resolve',
@@ -528,6 +529,7 @@ async function _processLine ( line )
 
           function finish () {
             debugLog( ' == finish == ' )
+            debugLog( 'finish value: ' + value )
 
             emit( {
               type: 'resolve',
@@ -617,6 +619,7 @@ async function _processLine ( line )
 
           function finish () {
             debugLog( ' == finish == ' )
+            debugLog( 'finish value: ' + value )
 
             emit( {
               type: 'resolve',
