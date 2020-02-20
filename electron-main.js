@@ -490,7 +490,7 @@ async function _processLine ( line )
 
               promise.then( function ( newValue ) {
                 value = newValue
-                return handlePromise()
+                return _resolve()
               } )
 
               promise.catch( function ( err ) {
