@@ -47,6 +47,7 @@ api.waitFor = waitFor
 api.evaluate = evaluate
 api.setUserAgent = setUserAgent
 api.getUserAgent = getUserAgent
+api.onrequest = onrequest
 
 api.getDefaultOptions = getDefaultOptions
 
@@ -711,6 +712,46 @@ function parseFunction ( fn, args )
   debugLog( ' === parseFunction end === ' )
 
   return wrapped
+}
+
+function onrequest ( mainWindow, listener )
+{
+  const session = mainWindow.webContents.session
+
+  // attach request handler
+  session.webRequest.onBeforeRequest(
+    async function ( details, callback ) {
+      const req = details
+      const url = details.url
+
+      // special case always allow devtools
+      if ( url.indexOf( 'devtools' )  === 0 ) {
+        return callback( { cancel: false } )
+      }
+
+      const _timeout = setTimeout( function () {
+        throw Error(`
+            .onrequest -- timed out!
+            Did you forget to call req.abort() or req.continue() ?
+            You can disable this error by calling req.ignore()
+          `)
+      }, 3000 )
+
+      req.abort = function () {
+        clearTimeout( _timeout )
+        return callback( { cancel: true } )
+      }
+      req.continue = function () {
+        clearTimeout( _timeout )
+        return callback( { cancel: false } )
+      }
+      req.ignore = function () {
+        clearTimeout( _timeout )
+      }
+
+      listener( req )
+    }
+  )
 }
 
 function encodeArg ( arg )
