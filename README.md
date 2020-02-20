@@ -2,12 +2,13 @@
 [![npm](https://img.shields.io/npm/l/eleko.svg?maxAge=3600&style=flat-square)](https://github.com/talmobi/eleko/blob/master/LICENSE)
 
 #  eleko
-tiny collection of electron helper functions (similar to
-puppeteer API) + an electron quickstart CLI generator
+a few electron helper functions (mimics puppeteer API) + launch function that returns a small API subset (that mimics puppeteer API) for spawning electron pages from node
 
 ## Easy to use
 
 #### Electron usage ( helper functions )
+<details><summary>CLICK ME</summary>
+<p>
 ```javascript
 // this file is run with the electron binary
 const electron = require( 'electron' )
@@ -107,6 +108,8 @@ fs.readFileSync(
   adBlockClient.add( rule )
 } )
 ```
+</p>
+</details>
 
 #### Node usage ( using launch api )
 
