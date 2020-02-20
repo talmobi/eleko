@@ -1,8 +1,8 @@
 const eleko = require( '../index.js' )
 
 ;( async function () {
-  const browser = await eleko.launch( { show: true } )
-  const page = await browser.newPage()
+  const browser = await eleko.launch()
+  const page = await browser.newPage( { show: true } )
 
   page.on( 'request', function ( req ) {
     const url = req.url
