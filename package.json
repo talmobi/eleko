@@ -44,6 +44,7 @@
     "serialize-error": "~5.0.0"
   },
   "devDependencies": {
+    "ad-block-js": "0.0.2",
     "electron": "~7.1.11",
     "express": "~4.17.1",
     "get-port": "~5.1.1",
