@@ -362,8 +362,17 @@ function launch ( options )
 
             const page = browser._pages.find( function ( page ) { return page.pageIndex === pageIndex } )
 
+            const _timeout = setTimeout( function () {
+              throw Error(`
+                  .onrequest -- timed out!
+                  Did you forget to call req.abort() or req.continue() ?
+                  You can disable this error by calling req.ignore()
+                `)
+            }, 3000 )
+
             const req = json.details
             req.abort = function () {
+              clearTimeout( _timeout )
               debugLog( 'eleko page:request abort()' )
 
               const response = {
@@ -375,6 +384,7 @@ function launch ( options )
               spawn.stdin.write( JSON.stringify( response ) + '\n' )
             }
             req.continue = function () {
+              clearTimeout( _timeout )
               debugLog( 'eleko page:request continue()' )
 
               const response = {
@@ -384,6 +394,9 @@ function launch ( options )
               }
 
               spawn.stdin.write( JSON.stringify( response ) + '\n' )
+            }
+            req.ignore = function () {
+              clearTimeout( _timeout )
             }
 
             // TODO should not happen, throw error?
