@@ -8,16 +8,9 @@ a few electron helper functions (mimics puppeteer API) + launch function that re
 
 #### Electron usage ( helper functions )
 <details>
-  <summary>Click to expand!</summary>
-  
-  ```javascript
-    function whatIsLove() {
-      console.log('Baby Don't hurt me. Don't hurt me');
-      return 'No more';
-    }
-  ```
-</details>
+  <summary>CLICK ME</summary>
 
+  ```javascript
     // this file is run with the electron binary
     const electron = require( 'electron' )
     const eleko = require( '../index.js' )
@@ -115,6 +108,8 @@ a few electron helper functions (mimics puppeteer API) + launch function that re
     .forEach( function ( rule ) {
       adBlockClient.add( rule )
     } )
+  ```
+</details>
 
 
 #### Node usage ( using launch api )
