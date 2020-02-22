@@ -25,13 +25,13 @@ function debugLog ( ...args ) {
   console.log.apply( this, args )
 }
 
-process.on( 'uncaughtException', onExit )
+process.on( 'uncaughtException', function ( err ) {
+  console.log( err )
+  process.exit()
+} )
 process.on( 'exit', onExit )
 
 function onExit ( err ) {
-  console.log( 'eleko exited' )
-  if ( err ) console.log( err )
-
   if ( onExit.done ) return
   onExit.done = true
   debugLog( 'eleko exited' )
