@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Images!</title>
+</head>
+<body>
+  <div>THIS IS A DIV WITH SOME CONTENT</div>
+
+  <script type="text/javascript">
+    function onLoad ( id ) {
+      console.log( 'onLoad called: ' + id )
+      const el = document.getElementById( id )
+      el.onLoadCalled = true
+    }
+    function onError ( id ) {
+      console.log( 'onError called: ' + id )
+      const el = document.getElementById( id )
+      el.onErrorCalled = true
+    }
+  </script>
+
+  <img id="dragonite" src="dragonite.gif" onload="onLoad('dragonite')" onerror="onError('dragonite')" alt="">
+  <img id="tide-ad" src="tide-ad.gif" onload="onLoad('tide-ad')" onerror="onError('tide-ad')" alt="">
+</body>
+</html>
