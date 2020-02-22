@@ -140,23 +140,31 @@ async function createWindow ( options )
         show: _envs.debug ? true : false,
         width: 800,
         height: 600,
-        webPreferences: {
-          autoplayPolicy: [ 'no-user-gesture-required', 'user-gesture-required', 'document-user-activation-required' ][ 2 ],
-
-          // javascript: false,
-          images: false,
-          webgl: false,
-
-          // security stuff
-          nodeIntegration: false,
-          webviewTag: false,
-          contextIsolation: true,
-          enableRemoteModule: false,
-
-          // preload: path.join( __dirname, 'electron-preload.js' )
-        }
+        webPreferences: {}
       },
       options
+    )
+
+    // setup options.webPreferences
+    // ( Object.assign isn't recursive )
+    options.webPreferences = Object.assign(
+      {},
+      {
+        autoplayPolicy: [ 'no-user-gesture-required', 'user-gesture-required', 'document-user-activation-required' ][ 2 ],
+
+        // javascript: false,
+        images: false,
+        webgl: false,
+
+        // security stuff
+        nodeIntegration: false,
+        webviewTag: false,
+        contextIsolation: true,
+        enableRemoteModule: false,
+
+        // preload: path.join( __dirname, 'electron-preload.js' )
+      },
+      options.webPreferences
     )
 
     if ( options.show ) {
