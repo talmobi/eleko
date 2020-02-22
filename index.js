@@ -4,7 +4,8 @@ const url = require( 'url' )
 
 const eeto = require( 'eeto' )
 
-const _nz = require( 'nozombie' )()
+const nozombie = require( 'nozombie' )
+const nz = nozombie()
 const functionToString = require( 'function-to-string' )
 const { serializeError, deserializeError } = require( 'serialize-error' )
 
@@ -33,7 +34,8 @@ function onExit ( err ) {
 
   if ( onExit.done ) return
   onExit.done = true
-  _nz.kill()
+  debugLog( 'eleko exited' )
+  nz.kill()
 }
 
 const api = eeto()
@@ -87,6 +89,8 @@ function getDefaultOptions ()
 
 function launch ( launchOptions )
 {
+  const _nz = nozombie()
+
   return new Promise( function ( browserResolve, browserReject ) {
     // path to electron executable in node context
     const _electron = require( 'electron' )
@@ -110,12 +114,19 @@ function launch ( launchOptions )
     let _messageId = 1
     const _promiseMap = {}
 
+    let _willClose = false
+    let _hasClosed = false
+
+    const _timeouts = []
+
     const browser = eeto()
     browser._pages = []
 
     let exitTimeout
     let exitPromiseId
     browser.close = browser.exit = browser.quit = function () {
+      _willClose = true
+
       let _resolve, _reject
       const _promise = new Promise( function ( resolve, reject ) {
         _resolve = resolve
@@ -277,6 +288,7 @@ function launch ( launchOptions )
     const _env = Object.assign( {}, process.env, { launched_with_eleko: true } )
     const spawn = _childProcess.spawn( _electron, [ filepath ], { stdio: 'pipe', shell: false, env: _env } )
     _nz.add( spawn.pid )
+    nz.add( spawn.pid )
     browser.spawn = spawn
 
     const initData = {
@@ -362,11 +374,16 @@ function launch ( launchOptions )
         case 'page:request':
           {
             debugLog( 'eleko page:request' )
+            if ( _hasClosed || _willClose ) return
 
             const pageIndex = json.pageIndex
             const messageId = json.messageId
 
             const page = browser._pages.find( function ( page ) { return page.pageIndex === pageIndex } )
+
+            // TODO should not happen, throw error?
+            // if ( !page ) return req.continue()
+            if ( !page ) throw new Error( 'page was undefined' )
 
             const _timeout = setTimeout( function () {
               throw Error(`
@@ -375,6 +392,7 @@ function launch ( launchOptions )
                   You can disable this error by calling req.ignore()
                 `)
             }, 3000 )
+            _timeouts.push( _timeout )
 
             const req = json.details
             req.abort = function () {
@@ -405,11 +423,8 @@ function launch ( launchOptions )
               clearTimeout( _timeout )
             }
 
-            // TODO should not happen, throw error?
-            // if ( !page ) return req.continue()
-            if ( !page ) throw new Error( 'page was undefined' )
-
             if ( typeof page.onrequest === 'function' ) {
+              debugLog( 'page.onrequest' )
               return page.onrequest( req )
             }
 
@@ -458,16 +473,30 @@ function launch ( launchOptions )
       }
     }
 
-    spawn.on( 'exit', function ( code ) {
+    spawn.on( 'close', function ( code ) {
+      _hasClosed = true
+
       if ( exitPromiseId ) {
         const p = _promiseMap[ exitPromiseId ]
         exitPromiseId = undefined
         p.resolve()
       }
 
-      console.log( 'electron spawn exited, code: ' + code )
+      // clear all pending timeouts
+      _timeouts.forEach( function ( t ) {
+        clearTimeout( t )
+      } )
+
+      spawn.stdout.removeAllListeners( 'data' )
+
+      debugLog( 'electron spawn exited, code: ' + code )
+
       clearTimeout( exitTimeout )
+      _nz.clean()
+      nz.clean()
+
       browser.emit( 'exit', code )
+      browser.emit( 'close', code )
     } )
   } )
 }
