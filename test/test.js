@@ -52,7 +52,7 @@ test( 'launch', async function ( t ) {
 
   const page = await browser.newPage(
     {
-      show: true,
+      // show: true,
       webPreferences: {
         images: true
       }
