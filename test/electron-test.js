@@ -53,6 +53,9 @@ process.on( 'uncaughtException', function ( error ) {
 // Module to control application life
 const app = electron.app
 
+// hide dock icon by default
+app.dock && app.dock.hide && app.dock.hide()
+
 // Module to create native browser window
 const BrowserWindow = electron.BrowserWindow
 
