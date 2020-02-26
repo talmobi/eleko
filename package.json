@@ -2,7 +2,7 @@
   "name": "eleko",
   "version": "0.0.1",
   "description": "electron helper fns",
-  "main": "eleko.js",
+  "main": "index.js",
   "files": [
     "index.js",
     "cli.js",
