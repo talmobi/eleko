@@ -29,7 +29,7 @@ a few electron helper functions (mimics puppeteer API) + launch function that re
       req.continue()
     } )
 
-    await page.goto( 'https://www.youtube.com/watch?v=6Stu7h7Qup8' )
+    await page.goto( 'https://www.youtube.com/watch?v=WY6sR6HQuMw' )
     await page.waitFor( function () {
       const video = document.querySelector( 'video' )
 
