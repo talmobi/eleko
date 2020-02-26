@@ -298,13 +298,31 @@ a few electron helper functions (mimics puppeteer API) + launch function that re
 
 ## About
 
+Simple easy to use api for basic controlling of electron
+browser.
+
 ## Why
+
+Electron comes bundled with a nice Chromium version that is
+capable to play many media formats that default Chromium is
+unable to that e.g. Puppeteer comes with. But the API for
+puppeteer is much nicer.
 
 ## For who?
 
+Those wanting to easy api for basic control of the electron browser. Not intended for scraping.
+
 ## How
 
-## Alternatives
+Within electron a set of helper functions to control a BrowserWindow object.
+
+From node using the launch api setup an IPC for a basic api.
+
+## Similar
+
+[puppeteer](https://github.com/puppeteer/puppeteer)
+
+[puppeteer-electron](https://www.npmjs.com/package/puppeteer-electron)
 
 ## Test
 ```
