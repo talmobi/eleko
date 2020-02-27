@@ -156,6 +156,17 @@ function launch ( launchOptions )
       return _promise
     }
 
+    setTimeout( heartbeat, 250 )
+    function heartbeat () {
+      if ( !_hasClosed ) {
+        const json = {
+          type: 'heartbeat'
+        }
+        spawn && spawn.stdin.write( JSON.stringify( json ) + '\n' )
+        setTimeout( heartbeat, 250 )
+      }
+    }
+
     browser.pages = function () {
       const messageId = _messageId++
 

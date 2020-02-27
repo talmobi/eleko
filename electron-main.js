@@ -20,6 +20,20 @@ const jp = require( 'jsonpath' )
 
 // is this needed?
 let _launchOptions = {}
+let _lastHeartBeat = Date.now()
+
+setTimeout( checkHeartbeat, 250 )
+function checkHeartbeat () {
+  const now = Date.now()
+  const delta = now - _lastHeartBeat
+
+  if ( delta > 1000 ) {
+    // quit when getting no heartbeats from main process
+    return app.quit()
+  }
+
+  setTimeout( checkHeartbeat, 250 )
+}
 
 process.on( 'uncaughtException', function ( error ) {
   console.log( ' === uncaughtException === ' )
@@ -364,6 +378,10 @@ async function _processLine ( line )
     // debugLog( 'query: ' + query )
 
     switch ( type ) {
+      case 'heartbeat':
+        _lastHeartBeat = Date.now()
+        break
+
       // init has launch options etc, should be first
       case 'init':
         {
