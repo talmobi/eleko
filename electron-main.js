@@ -29,6 +29,7 @@ function checkHeartbeat () {
 
   if ( delta > 1000 ) {
     // quit when getting no heartbeats from main process
+    console.log( 'exiting: no heartbeats' )
     return app.quit()
   }
 
