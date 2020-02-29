@@ -7,7 +7,7 @@ const eleko = require( '../index.js' )
 const wtfnode = require( 'wtfnode' )
 
 test( 'play youtube video', async function ( t ) {
-  t.timeoutAfter( 1000 * 10 )
+  t.timeoutAfter( 1000 * 15 )
   t.plan( 3 )
 
   const browser = await eleko.launch()
