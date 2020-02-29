@@ -723,18 +723,14 @@ function goto ( mainWindow, url )
 
   return new Promise( async function ( resolve, reject ) {
     try {
-      const id = 'eleko-page-reload-checker:' + Date.now()
-
-
-
       if ( !mainWindow.webContents.getURL() ) {
         await mainWindow.webContents.loadURL( 'about:blank' )
       }
 
       debugLog( ' === goto: waiting document.location 1 === ' )
-      // await waitFor( mainWindow, { polling: 100 }, function () {
-      //   return document.location && document.location.href && document.location.href === 'about:blank'
-      // } )
+      await evaluate( mainWindow, function ( url ) {
+        document.location.href = 'about:blank'
+      }, url )
 
       mainWindow.webContents.stop()
       debugLog( ' === goto: new url === ' )
