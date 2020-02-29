@@ -37,7 +37,7 @@
     "email": "talmo.christian@gmail.com"
   },
   "dependencies": {
-    "eeto": "0.0.1",
+    "eeto": "0.0.2",
     "function-to-string": "~0.2.0",
     "jsonpath": "~1.0.2",
     "node-fzf": "~0.5.3",
