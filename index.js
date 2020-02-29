@@ -793,7 +793,7 @@ function parseFunction ( fn, args )
   if ( wrapped.length < 100 ) {
     debugLog( wrapped )
   } else {
-    debugLog( wrapped.slice( 0, 60 ) + '...' )
+    debugLog( wrapped.slice( 0, 85 ) + '...' )
   }
   debugLog( ' === parseFunction end === ' )
 
