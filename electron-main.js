@@ -347,7 +347,7 @@ function parseArg ( arg )
 
 function _processBuffer ()
 {
-  debugLog( ' == _processBuffer == ' )
+  // debugLog( ' == _processBuffer == ' )
 
   const lines = _stdin_buffer.split( '\n' )
   _stdin_buffer = lines.pop()
@@ -360,7 +360,7 @@ function _processBuffer ()
 
 async function _processLine ( line )
 {
-  debugLog( ' == _processLine == ' )
+  // debugLog( ' == _processLine == ' )
 
   let json
   try {
