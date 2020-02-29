@@ -725,31 +725,33 @@ function goto ( mainWindow, url )
     try {
       const id = 'eleko-page-reload-checker:' + Date.now()
 
-      const currentURL = ( await mainWindow.getURL() ) || ''
-      if ( !( currentURL.trim() ) ) {
-        debugLog( 'loading about:blank' )
-        await mainWindow.loadURL( 'about:blank' )
+
+
+      if ( !mainWindow.webContents.getURL() ) {
+        await mainWindow.webContents.loadURL( 'about:blank' )
       }
 
-      await waitFor( mainWindow, { polling: 33 }, function () {
-        return !!document.location
+      debugLog( ' === goto: waiting document.location 1 === ' )
+      // await waitFor( mainWindow, { polling: 100 }, function () {
+      //   return document.location && document.location.href && document.location.href === 'about:blank'
+      // } )
+
+      mainWindow.webContents.stop()
+      debugLog( ' === goto: new url === ' )
+      await evaluate( mainWindow, function ( url ) {
+        console.log( 'new url: ' + url )
+        document.__eleko_reload = Date.now()
+        document.location.href = url
+      }, url )
+
+      debugLog( ' === goto: waiting document.location 2 === ' )
+      await waitFor( mainWindow, { polling: 100 }, function () {
+        return (
+          document.location && !document.__eleko_reload
+        )
       } )
 
-      debugLog( ' >> goto setup href << ' )
-      await evaluate( mainWindow, function ( id, url ) {
-        const el = document.createElement( 'div' )
-        el.id = id
-        document.body.appendChild( el )
-        document.location.href = url
-      }, id, url )
-
-      debugLog( ' >> goto waiting  << ' )
-      await waitFor( mainWindow, { polling: 33 }, function ( id ) {
-        const el = document.getElementById( id )
-        return document.body && !el
-      }, id )
-
-      debugLog( ' >> GOTO DONE << ' )
+      debugLog( ' === goto:done === ' )
       resolve()
     } catch ( err ) {
       reject( err )
@@ -765,11 +767,11 @@ function evaluate ( mainWindow, fn, ...args )
 
   return new Promise( async function ( resolve, reject ) {
     try {
-      const p = await mainWindow.webContents.executeJavaScript(
+      const r = await mainWindow.webContents.executeJavaScript(
         fnString,
         true
       )
-      resolve( p )
+      resolve( r )
     } catch ( err ) {
       reject( err )
     }
