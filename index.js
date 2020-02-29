@@ -634,9 +634,24 @@ function waitFor ( mainWindow, query, ...args )
     )
   }
 
+  let _timeout
+
   return new Promise ( function ( resolve, reject ) {
+    function cleanup () {
+      clearTimeout( _timeout )
+      reject( 'cleanup' )
+    }
+
+    const off = api.once( 'pregoto', function () {
+      cleanup()
+    } )
+
     if ( typeof query === 'number' ) {
-      return setTimeout( resolve, query )
+      _timeout = setTimeout( function () {
+        off()
+        resolve()
+      }, query )
+      return
     }
 
     let fnString
@@ -660,21 +675,23 @@ function waitFor ( mainWindow, query, ...args )
     const startTime = Date.now()
 
     function callback ( result ) {
-      debugLog( ' === callback === ' )
+      debugLog( ' === waitFor:callback === ' )
 
       if ( result ) {
+        debugLog( ' === waitFor:resolve === ' )
+        off() // no need to cleanup anymore
         return resolve()
       }
 
       const ms = Number( opts.polling ) || POLL_INTERVAL
 
-      setTimeout( next, ms )
+      _timeout = setTimeout( next, ms )
     }
 
     next()
 
     async function next () {
-      debugLog( ' === next === ' )
+      debugLog( ' === waitFor:next === ' )
 
       const now = Date.now()
       const delta = ( now - startTime )
@@ -683,12 +700,14 @@ function waitFor ( mainWindow, query, ...args )
       }
 
       try {
-        const p = await mainWindow.webContents.executeJavaScript(
+        debugLog( ' === waitFor:executeJavaScript === ' )
+        const r = await mainWindow.webContents.executeJavaScript(
           fnString,
           true
         )
-        callback( p )
+        callback( r )
       } catch ( err ) {
+        debugLog( ' === waitFor:reject === ' )
         reject( err )
       }
     }
@@ -699,6 +718,8 @@ function goto ( mainWindow, url )
 {
   debugLog( ' === goto === ' )
   debugLog( 'url: ' + url )
+
+  api.emit( 'pregoto' )
 
   return new Promise( async function ( resolve, reject ) {
     try {
