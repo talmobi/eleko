@@ -245,8 +245,8 @@ function launch ( launchOptions )
             // reset queue ( page.goto reloads current page and
             // resets queue because queued up events most likely
             // won't make sense anymore )
-            for ( let i = 0; i < queue.length; i++ ) {
-              const q = queue[ i ]
+            while ( queue.length > 0 ) {
+              const q = queue.shift()
               q.callback( 'error: interrupted by parallel page.goto call' )
             }
 
@@ -340,11 +340,10 @@ function launch ( launchOptions )
             const evt = { type: 'page:close', content: { id: page.id } }
             const queue = page.queue
 
-            // reset queue ( page.close reloads current page and
-            // resets queue because queued up events most likely
+            // reset queue ( because queued up events most likely
             // won't make sense anymore )
-            for ( let i = 0; i < queue.length; i++ ) {
-              const q = queue[ i ]
+            while ( queue.length > 0 ) {
+              const q = queue.shift()
               q.callback( 'error: interrupted by parallel page.close call' )
             }
 
