@@ -132,7 +132,7 @@ function launch ( launchOptions )
       console.log( log )
     } )
 
-    let _heartbeatTimeout = setTimeout( pulseHeartbeat, 1000 )
+    let _heartbeatTimeout = setTimeout( pulseHeartbeat, 0 ) // start heartbeats
     function pulseHeartbeat() {
       const json = { type: 'heartbeat' }
       ipc.send( json )
