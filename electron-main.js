@@ -30,7 +30,7 @@ process.on( 'uncaughtException', function ( error ) {
   console.log( error )
 
   try {
-    console.log( 'exiting electron app' )
+    console.log( 'exit electron: uncaughtException' )
     app.quit()
   } catch ( err ) {
     /* ignore */
@@ -50,9 +50,13 @@ Object.keys( process.env ).forEach(
   }
 )
 
-function debugLog ( ...args ) {
-  if ( !_envs.debug ) return
-  console.log.apply( this, args )
+const verbosity = (
+  _envs.debug ? 10 : _envs.verbose
+)
+
+function log ( level, message ) {
+  if ( level > verbosity ) return
+  console.log( message )
 }
 
 // example data
@@ -77,12 +81,12 @@ ipc.on( 'heartbeat', function () {
 
 ipc.on( 'promise', function ( p ) {
   const data = p.data
-  console.log( 'promise: ' + data.type )
+  log( 1, 'promise: ' + data.type )
 
   function callback ( err, value ) {
     if ( callback.done ) return
     callback.done = true
-    console.log( 'promise:callback' )
+    log( 1, 'promise:callback' )
     if ( err ) return p.reject( err )
     p.resolve( value )
   }
@@ -96,56 +100,58 @@ ipc.on( 'promise', function ( p ) {
 } )
 
 ipc.on( 'close', function () {
-  console.log( 'exit: browser.close() called' )
+  log( 1, 'exit: browser.close() called' )
   setTimeout( function () {
     app.quit()
   }, 0 )
 } )
 
 ipc.on( 'promise:newPage', async function ( req ) {
-  console.log( 'promise:newPage' )
+  log( 1, 'promise:newPage' )
 
   const options = req.data
   const page = await createPage( options )
 
   req.callback( undefined, page.id )
-  console.log( 'new page created' )
+  log( 1, 'new page created' )
 } )
 
 ipc.on( 'promise:page:goto', async function ( req ) {
-  console.log( 'promise:page:goto' )
+  log( 1, 'promise:page:goto' )
 
-  console.log( req.data )
+  log( 1, req.data )
 
   const page = _pages[ req.data.id ]
   const url = req.data.url
 
-  console.log( 'page:' )
-  console.log( page )
+  log( 1, 'page:' )
+  log( 1, page )
 
   try {
-    console.log( 'promise:page:goto:waiting' )
+    log( 1, 'promise:page:goto:waiting' )
     await eleko.goto( page.win, url )
-    console.log( 'promise:page:goto:done' )
+    log( 1, 'promise:page:goto:done' )
     req.callback( undefined )
   } catch ( err ) {
-    console.log( 'promise:page:goto:error' )
+    log( 1, 'promise:page:goto:error' )
     console.log( err )
     req.callback( err && err.message || err )
   }
 } )
 
-checkHeartbeat()
-function checkHeartbeat () {
-  const now = Date.now()
-  const delta = now - _lastHeartBeat
+ipc.on( 'promise:page:evaluate', async function ( req ) {
+  log( 1, 'promise:page:evaluate' )
 
-  if ( delta > 3000 ) {
-    console.log( 'exit: heartbeat stopped' )
-     setTimeout( function () {
-      app.quit()
-    }, 0 )
-    return false
+  log( 1, req.data )
+
+  const page = _pages[ req.data.id ]
+  const data = req.data
+
+  log( 1, 'page:' )
+  log( 1, page )
+
+  if ( !page ) {
+    return req.callback( 'no page found for id: ' + req.data.id )
   }
 
   clearTimeout( _heartbeatTimeout )
@@ -168,7 +174,7 @@ app.on( 'window-all-closed', function () {
   //    app.quit()
   // }
 
-  console.log( 'exit: window-all-closed' )
+  console.log( 'exit electron: window-all-closed' )
   setTimeout( function () {
     app.quit()
   }, 0 )
@@ -184,7 +190,7 @@ app.on( 'activate', function () {
 
 async function createPage ( options )
 {
-  debugLog( ' === createPage === ' )
+  log( 1, ' === createPage === ' )
 
   return new Promise( async function ( resolve, reject ) {
     options = options || {}
@@ -227,12 +233,12 @@ async function createPage ( options )
       app.dock && app.dock.show && app.dock.show()
     }
 
-    debugLog( 'normalized options' )
+    log( 1, 'normalized options' )
 
     // Create the browser window
-    debugLog( 'creating new BrowserWindow...' )
+    log( 1, 'creating new BrowserWindow...' )
     const mainWindow = new BrowserWindow( options )
-    debugLog( 'new BrowserWindow' )
+    log( 1, 'new BrowserWindow' )
 
     const session = mainWindow.webContents.session
 
@@ -261,7 +267,7 @@ async function createPage ( options )
     } )
 
     mainWindow.on( 'ready-to-show', function () {
-      debugLog( 'ready-to-show' )
+      log( 1, 'ready-to-show' )
       // mainWindow.show()
     } )
 
@@ -276,25 +282,25 @@ async function createPage ( options )
     }
 
     // load url
-    debugLog( 'opening about:blank...' )
+    log( 1, 'opening about:blank...' )
     // TODO turn once dom-ready into promise
     let _resolveDomReady
     const _promiseDomReady = new Promise( function ( resolve ) {
       _resolveDomReady = resolve
     })
     mainWindow.webContents.once( 'dom-ready', function () {
-      debugLog( 'dom-ready' )
+      log( 1, 'dom-ready' )
       _resolveDomReady()
     } )
-    debugLog( 'about:blank' )
+    log( 1, 'about:blank' )
     mainWindow.webContents.loadURL( 'about:blank' )
     await _promiseDomReady
 
-    debugLog( 'awaiting document.location...' )
+    log( 1, 'awaiting document.location...' )
     await eleko.waitFor( mainWindow, function () {
       return !!document.location
     } )
-    debugLog( 'document.location' )
+    log( 1, 'document.location' )
 
     const page = { win: mainWindow }
     _pages._ids = ( _pages._ids || 1 )
@@ -303,7 +309,7 @@ async function createPage ( options )
 
     // Emitted when the window is closed
     mainWindow.on( 'closed', function () {
-      debugLog( 'window closed (page.id: ' + page.id + ')' )
+      log( 1, 'window closed (page.id: ' + page.id + ')' )
 
       // Dereference the window object, usually you would store windows
       // in an array if your app supports multi windows, this is the time
@@ -330,7 +336,7 @@ async function createPage ( options )
           return callback( { cancel: false } )
         }
 
-        debugLog( ' == onBeforeRequest: ' + url.slice( 0, 23 ) )
+        log( 2, ' == onBeforeRequest: ' + url.slice( 0, 23 ) )
 
         const shouldBlock = await ipc.promise( {
           type: 'page:onrequest',
@@ -338,10 +344,10 @@ async function createPage ( options )
           details: details
         } )
 
-        console.log( 'shouldBlock: ' + shouldBlock )
+        log( 2, 'shouldBlock: ' + shouldBlock )
 
         if ( shouldBlock ) {
-          debugLog( ' (x) url blocked: ' + url.slice( 0, 55 ) )
+          log( 2, ' (x) url blocked: ' + url.slice( 0, 55 ) )
           callback( { cancel: true } ) // block
         } else {
           callback( { cancel: false } ) // let through

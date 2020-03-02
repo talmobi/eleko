@@ -22,9 +22,13 @@ Object.keys( process.env ).forEach(
   }
 )
 
-function debugLog ( ...args ) {
-  if ( !_envs.debug ) return
-  console.log.apply( this, args )
+const verbosity = (
+  _envs.debug ? 10 : _envs.verbose
+)
+
+function log ( level, message ) {
+  if ( level > verbosity ) return
+  console.log( message )
 }
 
 process.on( 'uncaughtException', function ( err ) {
@@ -36,7 +40,7 @@ process.on( 'exit', onExit )
 function onExit ( err ) {
   if ( onExit.done ) return
   onExit.done = true
-  debugLog( 'eleko exited' )
+  log( 1, 'eleko exited' )
   nz.kill()
 }
 
@@ -98,7 +102,7 @@ function launch ( launchOptions )
     const _electron = require( 'electron' )
 
     if ( typeof _electron !== 'string' ) {
-      debugLog( 'not a string' )
+      log( 1, 'not a string' )
       throw new Error(`
         Error: trying to spawn electron inside of an existing electron context.
         Spawn from within a node context instead.
@@ -137,10 +141,11 @@ function launch ( launchOptions )
     }
 
     ipc.on( 'promise', function ( p ) {
-      debugLog( 'ipc:promise ' + p.data.type )
+      log( 2, 'ipc:promise ' + p.data.type )
+
       const data = p.data
 
-      console.log( data )
+      // console.log( data )
 
       switch ( data.type ) {
         case 'page:onrequest':
@@ -154,7 +159,7 @@ function launch ( launchOptions )
                 if ( callback.done ) return
                 callback.done = true
 
-                debugLog( 'ipc:promise:callback' )
+                log( 2, 'page:onrequest:callback' )
                 if ( err ) return p.reject( err )
                 return p.resolve( data )
               }
@@ -162,11 +167,11 @@ function launch ( launchOptions )
               if ( page.onrequest ) {
                 const req = details
                 req.abort = function () {
-                  console.log( 'abort' )
+                  log( 2, 'abort' )
                   callback( undefined, true )
                 }
                 req.continue = function () {
-                  console.log( 'continue' )
+                 log( 2, 'continue' )
                   callback( undefined, false )
                 }
 
@@ -192,7 +197,7 @@ function launch ( launchOptions )
         } catch ( err ) {
           return reject( err )
         }
-        debugLog( 'pageId: ' + pageId )
+        log( 1, 'pageId: ' + pageId )
 
         const page = {
           id: pageId,
@@ -203,11 +208,11 @@ function launch ( launchOptions )
         browser._pages[ page.id ] = page
 
         page._queue_tick = async function page_queue_tick () {
-          debugLog( 'page._queue_tick' )
+          log( 1, 'page._queue_tick' )
           const queue = page.queue
 
           if ( !page.queueInProgress && queue.length > 0 ) {
-            debugLog( 'queueing next' )
+            log( 1, 'queueing next' )
             page.queueInProgress = true
 
             // get ( and remove ) first item from queue
@@ -227,12 +232,12 @@ function launch ( launchOptions )
 
             setTimeout( done, 0 )
           } else {
-            debugLog( 'queue already in progress' )
+            log( 1, 'queue already in progress' )
           }
         }
 
         page.goto = function page_goto ( url ) {
-          debugLog( 'api.page.goto' )
+          log( 1, 'api.page.goto' )
 
           return new Promise( async function ( resolve, reject ) {
             const evt = { type: 'page:goto', content: { url: url, id: page.id } }
@@ -267,7 +272,7 @@ function launch ( launchOptions )
 
     spawn.on( 'close', function ( code ) {
       clearTimeout( _heartbeatTimeout )
-      debugLog( 'electron spawn exited, code: ' + code )
+      log( 1, 'electron spawn exited, code: ' + code )
       _nz.clean()
       nz.clean()
 
@@ -294,16 +299,16 @@ function createWindow ( electron, _options )
   const app = electron.app
 
   process.on( 'uncaughtException', function ( error ) {
-    debugLog( ' === uncaughtException === ' )
+    log( 1, ' === uncaughtException === ' )
 
     try {
       app.quit()
-      debugLog( 'exited electron app' )
+      log( 1, 'exited electron app' )
     } catch ( err ) {
       /* ignore */
     }
 
-    debugLog( error )
+    log( 1, error )
 
     process.exit( 1 )
   } )
@@ -326,7 +331,7 @@ function createWindow ( electron, _options )
 
     function pollReadyState () {
       if ( _done ) return
-      debugLog( 'pollReadyState' )
+      log( 1, 'pollReadyState' )
 
       if ( app.isReady() ) {
         onReady()
@@ -336,7 +341,7 @@ function createWindow ( electron, _options )
     }
 
     function onReady () {
-      debugLog( 'onReady' )
+      log( 1, 'onReady' )
 
       _stage = 'onReady new BrowserWindow'
       // Create the browser window
@@ -351,11 +356,11 @@ function createWindow ( electron, _options )
       _stage = 'finish'
       finish()
       function finish () {
-        debugLog( 'finish' )
+        log( 1, 'finish' )
         if ( _done ) {
           // we already timed out and yet now the window is ready,
           // should rarely happen
-          debugLog( 'warning: launch finished but was timed out earlier (launch timeout too short?)' )
+          log( 1, 'warning: launch finished but was timed out earlier (launch timeout too short?)' )
           mainWindow = undefined
           return
         }
@@ -416,7 +421,7 @@ function waitFor ( mainWindow, query, ...args )
     if ( typeof query === 'number' ) {
       _timeout = setTimeout( function () {
         off()
-        debugLog( ' === waitFor:done (number) === ' )
+        log( 1, ' === waitFor:done (number) === ' )
         resolve()
       }, query )
       return
@@ -443,10 +448,10 @@ function waitFor ( mainWindow, query, ...args )
     const startTime = Date.now()
 
     function callback ( result ) {
-      debugLog( ' === waitFor:callback === ' )
+      log( 1, ' === waitFor:callback === ' )
 
       if ( result ) {
-        debugLog( ' === waitFor:done (function) === ' )
+        log( 1, ' === waitFor:done (function) === ' )
         off() // no need to cleanup anymore
         return resolve()
       }
@@ -459,7 +464,7 @@ function waitFor ( mainWindow, query, ...args )
     next()
 
     async function next () {
-      debugLog( ' === waitFor:next === ' )
+      log( 1, ' === waitFor:next === ' )
 
       const now = Date.now()
       const delta = ( now - startTime )
@@ -468,14 +473,14 @@ function waitFor ( mainWindow, query, ...args )
       }
 
       try {
-        debugLog( ' === waitFor:executeJavaScript === ' )
+        log( 1, ' === waitFor:executeJavaScript === ' )
         const r = await mainWindow.webContents.executeJavaScript(
           fnString,
           true
         )
         callback( r )
       } catch ( err ) {
-        debugLog( ' === waitFor:reject === ' )
+        log( 1, ' === waitFor:reject === ' )
         reject( err )
       }
     }
@@ -484,33 +489,33 @@ function waitFor ( mainWindow, query, ...args )
 
 function goto ( mainWindow, url )
 {
-  debugLog( ' === goto === ' )
-  debugLog( 'url: ' + url )
+  log( 1, ' === goto === ' )
+  log( 1, 'url: ' + url )
 
   api.emit( 'pregoto' )
 
   return new Promise( async function ( resolve, reject ) {
     setTimeout( startLoading, 1 )
     function startLoading () {
-      debugLog( ' === goto:startLoading === ' )
+      log( 1, ' === goto:startLoading === ' )
 
       setTimeout( async function () {
-        debugLog( ' === goto:document.location.href === ' )
+        log( 1, ' === goto:document.location.href === ' )
         // mainWindow.webContents.loadURL( url )
         try {
           const r = await evaluate( mainWindow, function ( url ) {
             document.location.href = url
           }, url )
 
-          debugLog( ' === goto:document.location.href:after === ' )
+          log( 1, ' === goto:document.location.href:after === ' )
         } catch ( err ) {
           reject( err )
         }
       }, 1 )
 
       mainWindow.webContents.once( 'dom-ready', function () {
-        debugLog( ' === goto:dom-ready === ' )
-        debugLog( ' === goto:done === ' )
+        log( 1, ' === goto:dom-ready === ' )
+        log( 1, ' === goto:done === ' )
         resolve()
       } )
     }
@@ -522,13 +527,13 @@ function goto ( mainWindow, url )
       }
 
 
-      debugLog( ' === goto: waiting document.location 1 === ' )
+      log( 1, ' === goto: waiting document.location 1 === ' )
       // await waitFor( mainWindow, { polling: 100 }, function () {
       //   return document.location && document.location.href && document.location.href === 'about:blank'
       // } )
 
       mainWindow.webContents.stop()
-      debugLog( ' === goto: new url === ' )
+      log( 1, ' === goto: new url === ' )
       await evaluate( mainWindow, function ( url ) {
         console.log( 'new url: ' + url )
         document.location.href = url
@@ -541,26 +546,26 @@ function goto ( mainWindow, url )
       await new Promise( function ( resolve ) {
         tick()
         function tick () {
-          debugLog( ' === goto:tick ===' )
+          log( 1, ' === goto:tick ===' )
           const isLoading = mainWindow.webContents.isLoading()
 
           if ( isLoading ) {
             setTimeout( tick, 200 )
           } else {
-            debugLog( ' === goto:tick:done ===' )
+            log( 1, ' === goto:tick:done ===' )
             resolve()
           }
         }
       } )
 
 
-      debugLog( ' === goto: waiting document.location 2 === ' )
+      log( 1, ' === goto: waiting document.location 2 === ' )
       // TODO fix waitfor breaking after goto
       // await waitFor( mainWindow, { polling: 250 }, function () {
       //   return true
       // } )
 
-      debugLog( ' === goto:done === ' )
+      log( 1, ' === goto:done === ' )
       resolve()
     } catch ( err ) {
       reject( err )
@@ -571,7 +576,7 @@ function goto ( mainWindow, url )
 
 function evaluate ( mainWindow, fn, ...args )
 {
-  debugLog( ' === evaluate === ' )
+  log( 1, ' === evaluate === ' )
 
   const fnString = parseFunction( fn, args )
 
@@ -599,13 +604,13 @@ function parseFunction ( fn, args )
     ;(${ fnString })(${ args.join( ',' ) });
   `)
 
-  debugLog( ' === parseFunction begin === ' )
+  log( 1, ' === parseFunction begin === ' )
   if ( wrapped.length < 100 ) {
-    debugLog( wrapped )
+    log( 1, wrapped )
   } else {
-    debugLog( wrapped.slice( 0, 85 ) + '...' )
+    log( 1, wrapped.slice( 0, 85 ) + '...' )
   }
-  debugLog( ' === parseFunction end === ' )
+  log( 1, ' === parseFunction end === ' )
 
   return wrapped
 }
