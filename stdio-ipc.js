@@ -83,8 +83,8 @@ function create ( stdread, stdwrite ) {
             if ( evt.error ) {
               p.reject( evt.error )
             } else {
-              console.log( evt )
-              console.log( 'promise content: ' + evt.content )
+              // console.log( evt )
+              // console.log( 'promise content: ' + evt.content )
               p.resolve( evt.content )
             }
           }
