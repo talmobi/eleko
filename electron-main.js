@@ -79,6 +79,24 @@ ipc.on( 'heartbeat', function () {
   _lastHeartBeat = now
 } )
 
+checkHeartbeat() // start checking heartbeats
+function checkHeartbeat () {
+  const now = Date.now()
+  const delta = now - _lastHeartBeat
+
+  if ( delta > 3000 ) {
+    console.log( 'exit electron: heartbeat stopped' )
+     setTimeout( function () {
+      app.quit()
+    }, 0 )
+    return false
+  }
+
+  clearTimeout( _heartbeatTimeout )
+  _heartbeatTimeout = setTimeout( checkHeartbeat, 500 )
+  return true
+}
+
 ipc.on( 'promise', function ( p ) {
   const data = p.data
   log( 1, 'promise: ' + data.type )
