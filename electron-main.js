@@ -269,7 +269,7 @@ async function createPage ( options )
     options = Object.assign(
       {},
       {
-        show: _envs.debug ? true : false,
+        show: !!( _envs.show || _envs.debug ),
         width: 800,
         height: 600,
         webPreferences: {}
@@ -348,7 +348,7 @@ async function createPage ( options )
     // )
 
     // Open the DevTools in debug mode by default
-    if ( _envs.debug ) {
+    if ( _envs.debug || _envs.devtools ) {
       mainWindow.webContents.openDevTools()
     }
 
