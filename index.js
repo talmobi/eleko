@@ -7,6 +7,8 @@ const eeto = require( 'eeto' )
 const nozombie = require( 'nozombie' )
 const nz = nozombie()
 const functionToString = require( 'function-to-string' )
+const pf = require( 'parse-function' )()
+
 const { serializeError, deserializeError } = require( 'serialize-error' )
 
 const stdioipc = require( './stdio-ipc.js' )
@@ -256,8 +258,107 @@ function launch ( launchOptions )
               callback: function q_callback ( err, data ) {
                 if ( q_callback.done ) return
                 q_callback.done = true
-                debugLog( 'queue page:goto callback' )
+                log( 1, 'queue page:goto callback' )
                 if ( err ) return reject( err )
+                resolve( data )
+              }
+            } )
+
+            page._queue_tick()
+          } )
+        }
+
+        page.evaluate = function page_evaluate ( fn, ...args ) {
+          log( 1, 'api.page.evaluate' )
+
+          const content = {
+            fn: pf.parse( fn ),
+            args: args,
+            id: page.id
+          }
+
+          return new Promise( async function ( resolve, reject ) {
+            const evt = { type: 'page:evaluate', content: content }
+            const queue = page.queue
+
+            queue.push( {
+              evt: evt,
+              callback: function q_callback ( err, data ) {
+                if ( q_callback.done ) return
+                q_callback.done = true
+                log( 1, 'queue page:evaluate callback' )
+                if ( err ) return reject( err )
+                resolve( data )
+              }
+            } )
+
+            page._queue_tick()
+          } )
+        }
+
+        page.waitFor = function page_waitFor ( fn, ...args ) {
+          log( 1, 'api.page.waitFor' )
+
+          let content = {
+            id: page.id
+          }
+
+          if ( Number( fn ) == fn ) {
+            content.type = 'sleep'
+            content.ms = Number( fn )
+          } else if ( typeof fn === 'function' ) {
+            content.type = 'function'
+            content.fn = pf.parse( fn )
+            content.args = args
+          } else if ( typeof fn === 'string' ) {
+            content.type = 'querySelector'
+            content.querySelector = fn
+          } else {
+            throw new Error( 'error: unknown page.waitFor arguments' )
+          }
+
+          return new Promise( async function ( resolve, reject ) {
+            const evt = { type: 'page:waitFor', content: content }
+            const queue = page.queue
+
+            queue.push( {
+              evt: evt,
+              callback: function q_callback ( err, data ) {
+                if ( q_callback.done ) return
+                q_callback.done = true
+                log( 1, 'queue page:waitFor callback' )
+                if ( err ) return reject( err )
+                resolve( data )
+              }
+            } )
+
+            page._queue_tick()
+          } )
+        }
+
+        page.close = function page_close () {
+          log( 1, 'api.page.close' )
+
+          return new Promise( async function ( resolve, reject ) {
+            const evt = { type: 'page:close', content: { id: page.id } }
+            const queue = page.queue
+
+            // reset queue ( page.close reloads current page and
+            // resets queue because queued up events most likely
+            // won't make sense anymore )
+            for ( let i = 0; i < queue.length; i++ ) {
+              const q = queue[ i ]
+              q.callback( 'interrupted by early page.close call' )
+            }
+
+            queue.push( {
+              evt: evt,
+              callback: function q_callback ( err, data ) {
+                if ( q_callback.done ) return
+                q_callback.done = true
+                log( 1, 'queue page:close callback' )
+                if ( err ) return reject( err )
+                page.status = 'closed'
                 resolve( data )
               }
             } )

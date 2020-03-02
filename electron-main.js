@@ -139,6 +139,24 @@ ipc.on( 'promise:page:goto', async function ( req ) {
   }
 } )
 
+ipc.on( 'promise:page:close', async function ( req ) {
+  log( 1, 'promise:page:close' )
+
+  log( 1, req.data )
+  const page = _pages[ req.data.id ]
+
+  try {
+    log( 1, 'promise:page:close:waiting' )
+    await page.win.destroy()
+    log( 1, 'promise:page:close:done' )
+    req.callback( undefined )
+  } catch ( err ) {
+    log( 1, 'promise:page:close:error' )
+    console.log( err )
+    req.callback( err && err.message || err )
+  }
+} )
+
 ipc.on( 'promise:page:evaluate', async function ( req ) {
   log( 1, 'promise:page:evaluate' )
 
@@ -154,10 +172,45 @@ ipc.on( 'promise:page:evaluate', async function ( req ) {
     return req.callback( 'no page found for id: ' + req.data.id )
   }
 
-  clearTimeout( _heartbeatTimeout )
-  _heartbeatTimeout = setTimeout( checkHeartbeat, 500 )
-  return true
-}
+  const fn = data.fn
+  const args = data.args
+
+  log( 1, 'page:evaluate createNamedFunction' )
+
+  const createNamedFunction = Function.apply(
+    this,
+    [
+      `
+      return function ${ fn.name || '' } ( ${ fn.args.join( ',' ) } ) {
+        ${ fn.body }
+      }
+      `.trim()
+    ]
+    )
+
+  const evalFn = createNamedFunction()
+  log( 1, 'page:evaluate createNamedFunction:done' )
+  log( 1, evalFn.toString() )
+
+  const evalArgs = args
+
+  const applyArgs = [
+    page.win,
+    evalFn,
+    args
+  ]
+
+  try {
+    log( 1, 'promise:page:evaluate:waiting' )
+    const value = await eleko.evaluate.apply( this, applyArgs )
+    log( 1, 'promise:page:evaluate:done' )
+    req.callback( undefined, value )
+  } catch ( err ) {
+    log( 1, 'promise:page:evaluate:error' )
+    console.log( err )
+    req.callback( err && err.message || err )
+  }
+} )
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.

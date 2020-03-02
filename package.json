@@ -42,6 +42,7 @@
     "jsonpath": "~1.0.2",
     "node-fzf": "~0.5.3",
     "nozombie": "~0.7.0",
+    "parse-function": "~5.6.5",
     "serialize-error": "~5.0.0"
   },
   "devDependencies": {
