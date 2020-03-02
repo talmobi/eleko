@@ -5,7 +5,6 @@ const url = require( 'url' )
 const eeto = require( 'eeto' )
 
 const nozombie = require( 'nozombie' )
-const nz = nozombie()
 const functionToString = require( 'function-to-string' )
 const pf = require( 'parse-function' )()
 
@@ -43,7 +42,6 @@ function onExit ( err ) {
   if ( onExit.done ) return
   onExit.done = true
   log( 1, 'eleko exited' )
-  nz.kill()
 }
 
 const api = eeto()
@@ -125,7 +123,6 @@ function launch ( launchOptions )
     const _env = Object.assign( {}, process.env, { launched_with_eleko: true } )
     const spawn = _childProcess.spawn( _electron, [ filepath ], { stdio: 'pipe', shell: false, env: _env } )
     _nz.add( spawn.pid )
-    nz.add( spawn.pid )
     browser.spawn = spawn
 
     const ipc = stdioipc.create( spawn.stdout, spawn.stdin )
@@ -374,8 +371,7 @@ function launch ( launchOptions )
     spawn.on( 'close', function ( code ) {
       clearTimeout( _heartbeatTimeout )
       log( 1, 'electron spawn exited, code: ' + code )
-      _nz.clean()
-      nz.clean()
+      _nz.kill()
 
       browser.emit( 'exit', code )
       browser.emit( 'close', code )
