@@ -202,6 +202,7 @@ function launch ( launchOptions )
           id: pageId,
           queue: [],
           queueInProgress: false,
+          _timeouts: [],
           status: 'OK'
         }
         browser._pages[ page.id ] = page
@@ -293,43 +294,64 @@ function launch ( launchOptions )
           } )
         }
 
-        page.waitFor = function page_waitFor ( fn, ...args ) {
+        page.waitFor = function page_waitFor ( query, ...args ) {
           log( 1, 'api.page.waitFor' )
 
-          let content = {
-            id: page.id
+          let opts = {}
+          if ( typeof query === 'object' ) {
+            opts = query
+            query = args[ 0 ]
+            args = args.slice( 1 )
           }
 
-          if ( Number( fn ) == fn ) {
-            content.type = 'sleep'
-            content.ms = Number( fn )
-          } else if ( typeof fn === 'function' ) {
-            content.type = 'function'
-            content.fn = pf.parse( fn )
-            content.args = args
-          } else if ( typeof fn === 'string' ) {
-            content.type = 'querySelector'
-            content.querySelector = fn
-          } else {
-            throw new Error( 'error: unknown page.waitFor arguments' )
+          const polling = Number( opts.polling ) || POLL_INTERVAL
+
+          if ( typeof query === 'string' ) {
+            function fn ( querySelector ) {
+              return document.querySelector( querySelector )
+            }
+            return page.waitFor( opts, fn, query )
           }
 
           return new Promise( async function ( resolve, reject ) {
-            const evt = { type: 'page:waitFor', content: content }
-            const queue = page.queue
+            if ( typeof query === 'number' ) {
+              const t = setTimeout( resolve, query )
+              page._timeouts.push( t )
+            } else if ( typeof query === 'function' ) {
+              let _tick_timeout
 
-            queue.push( {
-              evt: evt,
-              callback: function q_callback ( err, data ) {
-                if ( q_callback.done ) return
-                q_callback.done = true
-                log( 1, 'queue page:waitFor callback' )
+              function finish ( err ) {
+                if ( finish.done ) return
+                finish.done = true
+
+                clearTimeout( _wait_timeout )
+                clearTimeout( _tick_timeout  )
+
                 if ( err ) return reject( err )
-                resolve( data )
+                resolve()
               }
-            } )
 
-            page._queue_tick()
+              const _wait_timeout = setTimeout( function () {
+                finish( 'error: waitFor timed out (over ' + WAITFOR_TIMEOUT_TIME + ' ms)' )
+              }, WAITFOR_TIMEOUT_TIME )
+              page._timeouts.push( _wait_timeout )
+
+              async function tick () {
+                try {
+                  const done = await page.evaluate( query, args )
+                  if ( done ) return finish()
+                } catch ( err ) {
+                  return finish( err )
+                }
+
+                // wait polling interval and try again
+                clearTimeout( _tick_timeout )
+                _tick_timeout = setTimeout( tick, polling )
+                page._timeouts.push( _tick_timeout )
+              }
+            } else {
+              throw new Error( 'error: unknown page.waitFor arguments' )
+            }
           } )
         }
 
