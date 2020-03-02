@@ -345,7 +345,7 @@ function launch ( launchOptions )
             // won't make sense anymore )
             for ( let i = 0; i < queue.length; i++ ) {
               const q = queue[ i ]
-              q.callback( 'error: interrupted by parallel page.goto call' )
+              q.callback( 'error: interrupted by parallel page.close call' )
             }
 
             queue.push( {
