@@ -9,6 +9,8 @@ const nz = nozombie()
 const functionToString = require( 'function-to-string' )
 const { serializeError, deserializeError } = require( 'serialize-error' )
 
+const stdioipc = require( './stdio-ipc.js' )
+
 const _envs = {}
 Object.keys( process.env ).forEach(
   function ( key ) {
@@ -111,190 +113,8 @@ function launch ( launchOptions )
     // file to be run with electron
     const filepath = path.join( __dirname, 'electron-main.js' )
 
-    let _messageId = 1
-    const _promiseMap = {}
-
-    let _willClose = false
-    let _hasClosed = false
-
-    const _timeouts = []
-
     const browser = eeto()
-    browser._pages = []
-
-    let exitTimeout
-    let exitPromiseId
-    browser.close = browser.exit = browser.quit = function () {
-      _willClose = true
-
-      let _resolve, _reject
-      const _promise = new Promise( function ( resolve, reject ) {
-        _resolve = resolve
-        _reject = reject
-      } )
-
-      exitTimeout = setTimeout( function () {
-        _nz.kill()
-      }, 1000 * 3 )
-
-      const messageId = _messageId++
-      exitPromiseId = messageId
-      const json = {
-        type: 'app',
-        query: 'quit',
-        messageId: messageId
-      }
-
-      _promiseMap[ messageId ] = {
-        promise: _promise,
-        resolve: _resolve,
-        reject: _reject
-      }
-
-      spawn.stdin.write( JSON.stringify( json ) + '\n' )
-
-      return _promise
-    }
-
-    setTimeout( heartbeat, 250 )
-    function heartbeat () {
-      if ( !_hasClosed ) {
-        const json = {
-          type: 'heartbeat'
-        }
-        spawn && spawn.stdin.write( JSON.stringify( json ) + '\n' )
-        setTimeout( heartbeat, 250 )
-      }
-    }
-
-    browser.pages = function () {
-      const messageId = _messageId++
-
-      let _resolve, _reject
-      const _promise = new Promise( function ( resolve, reject ) {
-        _resolve = resolve
-        _reject = reject
-      } )
-
-      _promiseMap[ messageId ] = {
-        promise: _promise,
-        resolve: _resolve,
-        reject: _reject
-      }
-
-      const json = {
-        type: 'browser:pages',
-        messageId: messageId
-      }
-
-      spawn.stdin.write( JSON.stringify( json ) + '\n' )
-
-      return _promise
-    }
-
-    browser.newPage = function ( options ) {
-      const messageId = _messageId++
-
-      let _resolve, _reject
-      const _promise = new Promise( function ( resolve, reject ) {
-        _resolve = resolve
-        _reject = reject
-      } )
-
-      _promiseMap[ messageId ] = {
-        promise: _promise,
-        resolve: _resolve,
-        reject: _reject
-      }
-
-      const json = {
-        type: 'browser:newPage',
-        messageId: messageId,
-        options: options
-      }
-
-      spawn.stdin.write( JSON.stringify( json ) + '\n' )
-
-      return _promise
-    }
-
-    function infectPage ( eleko_data ) {
-      const page = eeto()
-      page.pageIndex = eleko_data.pageIndex
-
-      // attach eleko helper fns
-      ;[
-        'goto',
-        'waitFor',
-        'evaluate',
-        'setUserAgent',
-        'getUserAgent'
-      ].forEach( function ( name ) {
-        page[ name ] = function ( ...args ) {
-          const messageId = _messageId++
-
-          let _resolve, _reject
-          const _promise = new Promise( function ( resolve, reject ) {
-            _resolve = resolve
-            _reject = reject
-          } )
-
-          _promiseMap[ messageId ] = {
-            promise: _promise,
-            resolve: _resolve,
-            reject: _reject
-          }
-
-          const json = {
-            type: 'page:eleko',
-            pageIndex: page.pageIndex,
-            messageId: messageId,
-
-            query: name,
-            args: args.map( function ( arg ) {
-              return encodeArg( arg )
-            } )
-          }
-
-          spawn.stdin.write( JSON.stringify( json ) + '\n' )
-
-          return _promise
-        }
-      } )
-
-      page.call = function call ( ...args ) {
-        const messageId = _messageId++
-
-        let _resolve, _reject
-        const _promise = new Promise( function ( resolve, reject ) {
-          _resolve = resolve
-          _reject = reject
-        } )
-
-        _promiseMap[ messageId ] = {
-          promise: _promise,
-          resolve: _resolve,
-          reject: _reject
-        }
-
-        const json = {
-          type: 'page:query',
-          pageIndex: page.pageIndex,
-          messageId: messageId,
-
-          query: args[ 0 ],
-          args: args.slice( 1 ).map( function ( arg ) {
-            return encodeArg( arg )
-          } )
-        }
-
-        spawn.stdin.write( JSON.stringify( json ) + '\n' )
-
-        return _promise
-      }
-
-      return page
-    }
+    browser._pages = {}
 
     const _env = Object.assign( {}, process.env, { launched_with_eleko: true } )
     const spawn = _childProcess.spawn( _electron, [ filepath ], { stdio: 'pipe', shell: false, env: _env } )
@@ -302,213 +122,160 @@ function launch ( launchOptions )
     nz.add( spawn.pid )
     browser.spawn = spawn
 
-    const initData = {
-      type: 'init',
-      launchOptions: launchOptions
-    }
-    spawn.stdin.write( JSON.stringify( initData ) + '\n' )
-
-    let _buffer = ''
-    spawn.stdout.on( 'data', function ( chunk ) {
-      _buffer += chunk
-      _processBuffer()
+    const ipc = stdioipc.create( spawn.stdout, spawn.stdin )
+    ipc.emit( 'ready' )
+    ipc.on( 'log', function ( log ) {
+      if ( browser.silent ) return
+      console.log( log )
     } )
 
-    function _processBuffer () {
-      const lines = _buffer.split( '\n' )
-      _buffer = lines.pop()
-      // debugLog( '_buffer.length: ' + _buffer.length )
-
-      for ( let i = 0; i < lines.length; i++ ) {
-        const line = lines[ i ]
-        handleLine( line )
-      }
+    let _heartbeatTimeout = setTimeout( pulseHeartbeat, 1000 )
+    function pulseHeartbeat() {
+      const json = { type: 'heartbeat' }
+      ipc.send( json )
+      _heartbeatTimeout = setTimeout( pulseHeartbeat, 1000 )
     }
 
-    function handleLine ( line ) {
-      let json
+    ipc.on( 'promise', function ( p ) {
+      debugLog( 'ipc:promise ' + p.data.type )
+      const data = p.data
 
-      try {
-        json = JSON.parse( line )
-      } catch ( err ) {
-        return console.log( line )
-      }
+      console.log( data )
 
-      // handle error
-      {
-        const messageId = json.messageId
-        const p = _promiseMap[ messageId ]
-        const error = json.error
-        if ( error ) return p.reject( deserializeError( error ) )
-      }
-
-      switch ( json.type ) {
-        // generic resolve
-        case 'resolve':
+      switch ( data.type ) {
+        case 'page:onrequest':
           {
-            const messageId = json.messageId
-            const value = json.value
+            const pageId = data.pageId
+            const details = data.details
 
-            const p = _promiseMap[ messageId ]
-            p.resolve( value )
-          }
-          break
+            const page = browser._pages[ pageId ]
+            if ( page && page.status === 'OK' ) {
+              function callback ( err, data ) {
+                if ( callback.done ) return
+                callback.done = true
 
-        case 'app-ready':
-          return browserResolve( browser )
-
-        case 'browser:pages:response':
-          {
-            const pageIndex = json.pageIndex
-            const messageId = json.messageId
-
-            const p = _promiseMap[ messageId ]
-            p.resolve( json.pages.map( function ( page ) {
-              return infectPage( page )
-            } ) )
-          }
-          break
-
-        case 'browser:newPage:response':
-          {
-            const pageIndex = json.pageIndex
-            const messageId = json.messageId
-
-            const p = _promiseMap[ messageId ]
-            const page = infectPage( json.newPage )
-
-            browser._pages.push( page )
-            p.resolve( page )
-          }
-          break
-
-        case 'page:request':
-          {
-            debugLog( 'eleko page:request' )
-            if ( _hasClosed || _willClose ) return
-
-            const pageIndex = json.pageIndex
-            const messageId = json.messageId
-
-            const page = browser._pages.find( function ( page ) { return page.pageIndex === pageIndex } )
-
-            // TODO should not happen, throw error?
-            // if ( !page ) return req.continue()
-            if ( !page ) throw new Error( 'page was undefined' )
-
-            const _timeout = setTimeout( function () {
-              throw Error(`
-                  .onrequest -- timed out!
-                  Did you forget to call req.abort() or req.continue() ?
-                  You can disable this error by calling req.ignore()
-                `)
-            }, 3000 )
-            _timeouts.push( _timeout )
-
-            const req = json.details
-            req.abort = function () {
-              clearTimeout( _timeout )
-              debugLog( 'eleko page:request abort()' )
-
-              const response = {
-                type: 'resolve',
-                messageId: json.messageId,
-                value: true
+                debugLog( 'ipc:promise:callback' )
+                if ( err ) return p.reject( err )
+                return p.resolve( data )
               }
 
-              spawn.stdin.write( JSON.stringify( response ) + '\n' )
-            }
-            req.continue = function () {
-              clearTimeout( _timeout )
-              debugLog( 'eleko page:request continue()' )
+              if ( page.onrequest ) {
+                const req = details
+                req.abort = function () {
+                  console.log( 'abort' )
+                  callback( undefined, true )
+                }
+                req.continue = function () {
+                  console.log( 'continue' )
+                  callback( undefined, false )
+                }
 
-              const response = {
-                type: 'resolve',
-                messageId: json.messageId,
-                value: false
+                return page.onrequest( req )
+              } else {
+                return p.resolve()
               }
-
-              spawn.stdin.write( JSON.stringify( response ) + '\n' )
             }
-            req.ignore = function () {
-              clearTimeout( _timeout )
-            }
-
-            if ( typeof page.onrequest === 'function' ) {
-              debugLog( 'page.onrequest' )
-              return page.onrequest( req )
-            }
-
-            // if nobody is listening, default req.continue()
-            const l = page._listeners[ 'request' ] || []
-            if ( l.length <= 0 ) return req.continue()
-
-            page.emit( 'request', req  )
           }
           break
-
-        case 'page:close':
-          {
-            const pageIndex = json.pageIndex
-            const messageId = json.messageId
-
-            const page = browser._pages.find( function ( page ) { return page.pageIndex === pageIndex } )
-            page.emit( 'close' )
-
-            const i = browser._pages.indexOf( page )
-            browser._pages.splice( i, 1 )
-          }
-          break
-
-        case 'console.log':
-          {
-            const args = json.args
-            // debugLog.apply( this, args )
-            console.log.apply( this, args )
-          }
-          break
-
-        case 'error':
-          {
-            // TODO fix never called because of error handler
-            // above
-            const error = deserializeError( json.error )
-            console.log.apply( this, error )
-            browser.emit( 'exit', error )
-          }
-          break
-
-        default:
-          // unknown type
-          console.log( 'eleko unknown type: ' + line )
       }
+
+      return p.resolve()
+    } )
+
+    browser.newPage = function ( options ) {
+      return new Promise( async function ( resolve, reject ) {
+        const evt = { type: 'newPage', content: options }
+
+        let pageId
+        try {
+          pageId = await ipc.promise( evt )
+        } catch ( err ) {
+          return reject( err )
+        }
+        debugLog( 'pageId: ' + pageId )
+
+        const page = {
+          id: pageId,
+          queue: [],
+          queueInProgress: false,
+          status: 'OK'
+        }
+        browser._pages[ page.id ] = page
+
+        page._queue_tick = async function page_queue_tick () {
+          debugLog( 'page._queue_tick' )
+          const queue = page.queue
+
+          if ( !page.queueInProgress && queue.length > 0 ) {
+            debugLog( 'queueing next' )
+            page.queueInProgress = true
+
+            // get ( and remove ) first item from queue
+            const q = queue.shift()
+
+            function done () {
+              page.queueInProgress = false
+              setTimeout( page._queue_tick, 0 )
+            }
+
+            try {
+              const r = await ipc.promise( q.evt )
+              q.callback( undefined, r )
+            } catch ( err ) {
+              q.callback( err )
+            }
+
+            setTimeout( done, 0 )
+          } else {
+            debugLog( 'queue already in progress' )
+          }
+        }
+
+        page.goto = function page_goto ( url ) {
+          debugLog( 'api.page.goto' )
+
+          return new Promise( async function ( resolve, reject ) {
+            const evt = { type: 'page:goto', content: { url: url, id: page.id } }
+            const queue = page.queue
+
+            // reset queue ( page.goto reloads current page and
+            // resets queue because queued up events most likely
+            // won't make sense anymore )
+            for ( let i = 0; i < queue.length; i++ ) {
+              const q = queue[ i ]
+              q.callback( 'interrupted by early page.goto call' )
+            }
+
+            queue.push( {
+              evt: evt,
+              callback: function q_callback ( err, data ) {
+                if ( q_callback.done ) return
+                q_callback.done = true
+                debugLog( 'queue page:goto callback' )
+                if ( err ) return reject( err )
+                resolve( data )
+              }
+            } )
+
+            page._queue_tick()
+          } )
+        }
+
+        resolve( page )
+      } )
     }
 
     spawn.on( 'close', function ( code ) {
-      _hasClosed = true
-
-      if ( exitPromiseId ) {
-        const p = _promiseMap[ exitPromiseId ]
-        exitPromiseId = undefined
-        p.resolve()
-      }
-
-      // clear all pending timeouts
-      _timeouts.forEach( function ( t ) {
-        clearTimeout( t )
-      } )
-
-      spawn.stdout.removeAllListeners( 'data' )
-
+      clearTimeout( _heartbeatTimeout )
       debugLog( 'electron spawn exited, code: ' + code )
-
-      clearTimeout( exitTimeout )
       _nz.clean()
       nz.clean()
 
       browser.emit( 'exit', code )
       browser.emit( 'close', code )
     } )
+
+    browserResolve( browser )
   } )
 }
 
@@ -649,6 +416,7 @@ function waitFor ( mainWindow, query, ...args )
     if ( typeof query === 'number' ) {
       _timeout = setTimeout( function () {
         off()
+        debugLog( ' === waitFor:done (number) === ' )
         resolve()
       }, query )
       return
@@ -678,7 +446,7 @@ function waitFor ( mainWindow, query, ...args )
       debugLog( ' === waitFor:callback === ' )
 
       if ( result ) {
-        debugLog( ' === waitFor:resolve === ' )
+        debugLog( ' === waitFor:done (function) === ' )
         off() // no need to cleanup anymore
         return resolve()
       }
@@ -722,36 +490,82 @@ function goto ( mainWindow, url )
   api.emit( 'pregoto' )
 
   return new Promise( async function ( resolve, reject ) {
+    setTimeout( startLoading, 1 )
+    function startLoading () {
+      debugLog( ' === goto:startLoading === ' )
+
+      setTimeout( async function () {
+        debugLog( ' === goto:document.location.href === ' )
+        // mainWindow.webContents.loadURL( url )
+        try {
+          const r = await evaluate( mainWindow, function ( url ) {
+            document.location.href = url
+          }, url )
+
+          debugLog( ' === goto:document.location.href:after === ' )
+        } catch ( err ) {
+          reject( err )
+        }
+      }, 1 )
+
+      mainWindow.webContents.once( 'dom-ready', function () {
+        debugLog( ' === goto:dom-ready === ' )
+        debugLog( ' === goto:done === ' )
+        resolve()
+      } )
+    }
+
+    /*
     try {
       if ( !mainWindow.webContents.getURL() ) {
         await mainWindow.webContents.loadURL( 'about:blank' )
       }
 
+
       debugLog( ' === goto: waiting document.location 1 === ' )
-      await evaluate( mainWindow, function ( url ) {
-        document.location.href = 'about:blank'
-      }, url )
+      // await waitFor( mainWindow, { polling: 100 }, function () {
+      //   return document.location && document.location.href && document.location.href === 'about:blank'
+      // } )
 
       mainWindow.webContents.stop()
       debugLog( ' === goto: new url === ' )
       await evaluate( mainWindow, function ( url ) {
         console.log( 'new url: ' + url )
-        document.__eleko_reload = Date.now()
         document.location.href = url
       }, url )
 
-      debugLog( ' === goto: waiting document.location 2 === ' )
-      await waitFor( mainWindow, { polling: 100 }, function () {
-        return (
-          document.location && !document.__eleko_reload
-        )
+      await new Promise( function ( resolve ) {
+        setTimeout( resolve, 5000 )
       } )
+
+      await new Promise( function ( resolve ) {
+        tick()
+        function tick () {
+          debugLog( ' === goto:tick ===' )
+          const isLoading = mainWindow.webContents.isLoading()
+
+          if ( isLoading ) {
+            setTimeout( tick, 200 )
+          } else {
+            debugLog( ' === goto:tick:done ===' )
+            resolve()
+          }
+        }
+      } )
+
+
+      debugLog( ' === goto: waiting document.location 2 === ' )
+      // TODO fix waitfor breaking after goto
+      // await waitFor( mainWindow, { polling: 250 }, function () {
+      //   return true
+      // } )
 
       debugLog( ' === goto:done === ' )
       resolve()
     } catch ( err ) {
       reject( err )
     }
+    */
   } )
 }
 
@@ -811,6 +625,12 @@ function onrequest ( mainWindow, listener )
         return callback( { cancel: false } )
       }
       if ( url.indexOf( 'about:blank' ) === 0 ) {
+        return callback( { cancel: false } )
+      }
+      if (
+        url.indexOf( 'http' ) !== 0 &&
+        url.indexOf( 'file' ) !== 0
+      ) {
         return callback( { cancel: false } )
       }
 
