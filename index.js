@@ -270,7 +270,7 @@ function launch ( launchOptions )
           log( 1, 'api.page.evaluate' )
 
           const content = {
-            fn: pf.parse( fn ),
+            pf: pf.parse( fn ),
             args: args,
             id: page.id
           }

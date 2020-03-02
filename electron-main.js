@@ -25,6 +25,25 @@ const stdioipc = require( './stdio-ipc.js' )
 // is this needed?
 let _launchOptions = {}
 
+// create a named function out of a parse-function object
+// ex. const pf = require('parse-function')().parse( function foo () {} )
+//     const fn = createNamedFunction( pf )
+function createNamedFunction ( pf ) {
+  log( 1, 'createNamedFunction' )
+
+  const fn = Function.apply(
+    this,
+    [
+      `
+      return function ${ pf.name || '' } ( ${ pf.args.join( ',' ) } ) {
+        ${ pf.body }
+      }
+      `.trim()
+    ]
+  )
+  return fn()
+}
+
 process.on( 'uncaughtException', function ( error ) {
   console.log( ' === uncaughtException === ' )
   console.log( error )
@@ -190,23 +209,12 @@ ipc.on( 'promise:page:evaluate', async function ( req ) {
     return req.callback( 'no page found for id: ' + req.data.id )
   }
 
-  const fn = data.fn
+  const pf = data.pf
   const args = data.args
 
   log( 1, 'page:evaluate createNamedFunction' )
 
-  const createNamedFunction = Function.apply(
-    this,
-    [
-      `
-      return function ${ fn.name || '' } ( ${ fn.args.join( ',' ) } ) {
-        ${ fn.body }
-      }
-      `.trim()
-    ]
-    )
-
-  const evalFn = createNamedFunction()
+  const evalFn = createNamedFunction( pf )
   log( 1, 'page:evaluate createNamedFunction:done' )
   log( 1, evalFn.toString() )
 
