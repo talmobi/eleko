@@ -15,26 +15,15 @@ app.dock && app.dock.hide && app.dock.hide()
 // Module to create native browser window
 const BrowserWindow = electron.BrowserWindow
 
+const _pages = {}
+
 const eleko = require( './index.js' )
-const jp = require( 'jsonpath' )
+const eeto = require( 'eeto' )
+
+const stdioipc = require( './stdio-ipc.js' )
 
 // is this needed?
 let _launchOptions = {}
-let _lastHeartBeat = Date.now()
-
-setTimeout( checkHeartbeat, 250 )
-function checkHeartbeat () {
-  const now = Date.now()
-  const delta = now - _lastHeartBeat
-
-  if ( delta > 1000 ) {
-    // quit when getting no heartbeats from main process
-    console.log( 'exiting: no heartbeats' )
-    return app.quit()
-  }
-
-  setTimeout( checkHeartbeat, 250 )
-}
 
 process.on( 'uncaughtException', function ( error ) {
   console.log( ' === uncaughtException === ' )
@@ -66,12 +55,6 @@ function debugLog ( ...args ) {
   console.log.apply( this, args )
 }
 
-// Keep a global ref of the window objects, if you don't, the widow
-// will be closed automatically when the JavaScript object
-// is garbage collected
-let _pageIndexes = 0
-const _pages = []
-
 // example data
 const _philipGlassHoursVideoId = 'Wkof3nPK--Y'
 const pkmnBlueWaveId = 'pFbkURxNKPE' // requires h264
@@ -83,45 +66,99 @@ const _videoId = creedenceId
 // variable
 let _appReady = false
 
+const ipc = stdioipc.create( process.stdin, process.stdout )
+
+let _lastHeartBeat = Date.now()
+let _heartbeatTimeout
+ipc.on( 'heartbeat', function () {
+  const now = Date.now()
+  _lastHeartBeat = now
+} )
+
+ipc.on( 'promise', function ( p ) {
+  const data = p.data
+  console.log( 'promise: ' + data.type )
+
+  function callback ( err, value ) {
+    if ( callback.done ) return
+    callback.done = true
+    console.log( 'promise:callback' )
+    if ( err ) return p.reject( err )
+    p.resolve( value )
+  }
+
+  const req = {
+    callback: callback,
+    data: data.content
+  }
+
+  ipc.emit( 'promise:' + data.type, req )
+} )
+
+ipc.on( 'close', function () {
+  console.log( 'exit: browser.close() called' )
+  setTimeout( function () {
+    app.quit()
+  }, 0 )
+} )
+
+ipc.on( 'promise:newPage', async function ( req ) {
+  console.log( 'promise:newPage' )
+
+  const options = req.data
+  const page = await createPage( options )
+
+  req.callback( undefined, page.id )
+  console.log( 'new page created' )
+} )
+
+ipc.on( 'promise:page:goto', async function ( req ) {
+  console.log( 'promise:page:goto' )
+
+  console.log( req.data )
+
+  const page = _pages[ req.data.id ]
+  const url = req.data.url
+
+  console.log( 'page:' )
+  console.log( page )
+
+  try {
+    console.log( 'promise:page:goto:waiting' )
+    await eleko.goto( page.win, url )
+    console.log( 'promise:page:goto:done' )
+    req.callback( undefined )
+  } catch ( err ) {
+    console.log( 'promise:page:goto:error' )
+    console.log( err )
+    req.callback( err && err.message || err )
+  }
+} )
+
+checkHeartbeat()
+function checkHeartbeat () {
+  const now = Date.now()
+  const delta = now - _lastHeartBeat
+
+  if ( delta > 3000 ) {
+    console.log( 'exit: heartbeat stopped' )
+     setTimeout( function () {
+      app.quit()
+    }, 0 )
+    return false
+  }
+
+  clearTimeout( _heartbeatTimeout )
+  _heartbeatTimeout = setTimeout( checkHeartbeat, 500 )
+  return true
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs
 app.on( 'ready', async function () {
-  _appReady = true
-
-  // if launched with eleko.launch we create window only
-  // after options have been sent
-  if ( _envs.launched_with_eleko ) {
-    debugLog( 'app-ready' )
-
-    emit( {
-      type: 'app-ready'
-    } )
-
-    if ( _stdin_buffer ) {
-      setTimeout( function () {
-        _processBuffer()
-      }, 1 )
-    }
-  } else {
-    createWindow()
-  }
+  ipc.emit( 'ready' )
 } )
-
-let _messageId = 1
-const _promiseMap = {}
-
-let _stdin_buffer = ''
-if ( _envs.launched_with_eleko ) {
-  // setup ipc through stdio
-  process.stdin.on( 'data', function ( chunk ) {
-    _stdin_buffer += chunk
-
-    if ( _appReady ) {
-      _processBuffer()
-    }
-  } )
-}
 
 // Quit when all windows are closed.
 app.on( 'window-all-closed', function () {
@@ -131,7 +168,10 @@ app.on( 'window-all-closed', function () {
   //    app.quit()
   // }
 
-  app.quit()
+  console.log( 'exit: window-all-closed' )
+  setTimeout( function () {
+    app.quit()
+  }, 0 )
 })
 
 app.on( 'activate', function () {
@@ -142,9 +182,9 @@ app.on( 'activate', function () {
   // }
 })
 
-async function createWindow ( options )
+async function createPage ( options )
 {
-  debugLog( ' === createWindow === ' )
+  debugLog( ' === createPage === ' )
 
   return new Promise( async function ( resolve, reject ) {
     options = options || {}
@@ -193,8 +233,6 @@ async function createWindow ( options )
     debugLog( 'creating new BrowserWindow...' )
     const mainWindow = new BrowserWindow( options )
     debugLog( 'new BrowserWindow' )
-    mainWindow._eleko_data = {}
-    mainWindow._eleko_data.pageIndex = _pageIndexes++
 
     const session = mainWindow.webContents.session
 
@@ -239,8 +277,18 @@ async function createWindow ( options )
 
     // load url
     debugLog( 'opening about:blank...' )
-    await mainWindow.loadURL( 'about:blank' )
+    // TODO turn once dom-ready into promise
+    let _resolveDomReady
+    const _promiseDomReady = new Promise( function ( resolve ) {
+      _resolveDomReady = resolve
+    })
+    mainWindow.webContents.once( 'dom-ready', function () {
+      debugLog( 'dom-ready' )
+      _resolveDomReady()
+    } )
     debugLog( 'about:blank' )
+    mainWindow.webContents.loadURL( 'about:blank' )
+    await _promiseDomReady
 
     debugLog( 'awaiting document.location...' )
     await eleko.waitFor( mainWindow, function () {
@@ -248,26 +296,20 @@ async function createWindow ( options )
     } )
     debugLog( 'document.location' )
 
+    const page = { win: mainWindow }
+    _pages._ids = ( _pages._ids || 1 )
+    page.id = _pages._ids++
+    _pages[ page.id ] = page
+
     // Emitted when the window is closed
     mainWindow.on( 'closed', function () {
-      debugLog( 'window closed' )
+      debugLog( 'window closed (page.id: ' + page.id + ')' )
 
       // Dereference the window object, usually you would store windows
       // in an array if your app supports multi windows, this is the time
       // when you should delete the corresponding element
-
-      // remove this page from global reference list
-      let i = _pages.indexOf( mainWindow )
-      _pages.splice( i, 1 )
-
-      emit( {
-        type: 'page:close',
-        pageIndex: mainWindow._eleko_data.pageIndex
-      } )
+      delete page.win
     } )
-
-    _pages.push( mainWindow )
-    resolve( mainWindow )
 
     // attach request handler
     session.webRequest.onBeforeRequest(
@@ -281,30 +323,22 @@ async function createWindow ( options )
         if ( url.indexOf( 'about:blank' ) === 0 ) {
           return callback( { cancel: false } )
         }
+        if (
+          url.indexOf( 'http' ) !== 0 &&
+          url.indexOf( 'file' ) !== 0
+        ) {
+          return callback( { cancel: false } )
+        }
 
         debugLog( ' == onBeforeRequest: ' + url.slice( 0, 23 ) )
 
-        let _resolve, _reject
-        const _promise = new Promise( function ( resolve, reject ) {
-          _resolve = resolve
-          _reject = reject
-        } )
-
-        const messageId = _messageId++
-        _promiseMap[ messageId ] = {
-          promise: _promise,
-          resolve: _resolve,
-          reject: _reject
-        }
-
-        emit( {
-          type: 'page:request',
-          pageIndex: mainWindow._eleko_data.pageIndex,
-          messageId: messageId,
+        const shouldBlock = await ipc.promise( {
+          type: 'page:onrequest',
+          pageId: page.id,
           details: details
         } )
 
-        const shouldBlock = await _promise
+        console.log( 'shouldBlock: ' + shouldBlock )
 
         if ( shouldBlock ) {
           debugLog( ' (x) url blocked: ' + url.slice( 0, 55 ) )
@@ -314,389 +348,7 @@ async function createWindow ( options )
         }
       }
     )
+
+    resolve( page )
   } )
-}
-
-function parseArg ( arg )
-{
-  const type = arg.type
-  const content = arg.content
-
-  if ( type === 'object' || type === 'boolean' ) {
-    return JSON.parse( content )
-  } else if ( type === 'string' ) {
-    return content
-  } else if ( type === 'number' ) {
-    return Number( content )
-  } else if ( type === 'function' ) {
-    const info = JSON.parse( content )
-    const f = eval(`
-      ;(function () {
-        return function ${ info.name || '' } ( ${ info.params.join( ', ' ) } ) {
-          ${ info.body }
-        }
-      })()
-    `)
-
-    debugLog( ' == funcions == ' )
-    debugLog( f.toString() )
-
-    return f
-  }
-}
-
-function _processBuffer ()
-{
-  // debugLog( ' == _processBuffer == ' )
-
-  const lines = _stdin_buffer.split( '\n' )
-  _stdin_buffer = lines.pop()
-
-  for ( let i = 0; i < lines.length; i++ ) {
-    const line = lines[ i ]
-    _processLine( line )
-  }
-}
-
-async function _processLine ( line )
-{
-  // debugLog( ' == _processLine == ' )
-
-  let json
-  try {
-    json = JSON.parse( line )
-  } catch ( err ) {
-    throw err
-  }
-
-  try {
-    const type = json.type
-    const query = json.query
-    const args = json.args || []
-
-    // debugLog( 'messageId: ' + json.messageId )
-    // debugLog( 'type: ' + type )
-    // debugLog( 'query: ' + query )
-
-    switch ( type ) {
-      case 'heartbeat':
-        _lastHeartBeat = Date.now()
-        break
-
-      // init has launch options etc, should be first
-      case 'init':
-        {
-          // TODO, needed?
-          _launchOptions = json.launchOptions
-        }
-        break
-
-      // generic resolve
-      case 'resolve':
-        {
-          const messageId = json.messageId
-          const value = json.value
-
-          const p = _promiseMap[ messageId ]
-          p.resolve( value )
-        }
-        break
-
-      case 'browser:pages':
-        {
-          const pages = _pages.map( function ( page ) {
-            return page._eleko_data
-          } )
-
-          return emit( {
-            type: 'browser:pages:response',
-            messageId: json.messageId,
-            pages: pages
-          } )
-        }
-        break
-
-      case 'browser:newPage':
-        {
-          const newPage = await createWindow( json.options )
-
-          return emit( {
-            type: 'browser:newPage:response',
-            messageId: json.messageId,
-            newPage: newPage._eleko_data
-          } )
-        }
-        break
-
-      // executing functions on electron.app
-      // ex: app.quit()
-      case 'app':
-        {
-          const fn = jp.value( electron.app, query )
-
-          let that = electron.app
-
-          debugLog( query )
-          debugLog( fn )
-
-          args && debugLog( ' == args == ' + args.length )
-          args && debugLog( args )
-
-          const parsedArgs = args.map( function ( arg ) {
-            return parseArg( arg )
-          } )
-
-          parsedArgs && debugLog( ' == parsedArgs == ' + parsedArgs.length )
-          parsedArgs && debugLog( parsedArgs )
-
-          let value = fn.apply(
-            that,
-            parsedArgs
-          )
-
-          function finish () {
-            debugLog( ' == finish == ' )
-            debugLog( 'finish value: ' + value )
-
-            emit( {
-              type: 'resolve',
-              messageId: json.messageId,
-              value: value
-            } )
-          }
-
-          debugLog( 'value: ' + value )
-
-          _resolve()
-          async function _resolve () {
-            if ( value && typeof value === 'object' && typeof value.then === 'function' ) {
-              // is a promise
-              const promise = value
-
-              promise.then( function ( newValue ) {
-                debugLog( 'promise:then' )
-                value = newValue
-                return _resolve()
-              } )
-
-              promise.catch( function ( err ) {
-                debugLog( 'promise:catch' )
-
-                console.log( 'error: ' + err )
-                console.log( err )
-
-                return emit( {
-                  type: 'resolve',
-                  messageId: json.messageId,
-                  error: serializeError( err )
-                } )
-              } )
-            } else {
-              finish()
-            }
-          }
-        }
-        break
-
-      // use jsonpath to call methods on the page object
-      case 'page:query':
-        {
-          debugLog( 'page:query' )
-
-          const pageIndex = json.pageIndex
-          const page = _pages.find( function ( page ) { return page._eleko_data.pageIndex === json.pageIndex } )
-
-          // fatal error
-          if ( !page ) throw new Error( 'no such pageIndex found: ' + json.pageIndex )
-
-          debugLog( 'page found' )
-
-          // get the method using a jsonpath query
-          const fn = jp.value( page, json.query )
-
-          // set the parent/context of the method ( when used with .call/.apply )
-          let that = jp.parent( page, json.query ) || page
-
-          debugLog( query )
-          debugLog( fn )
-
-          args && debugLog( ' == args == ' + args.length )
-          args && debugLog( args )
-
-          const parsedArgs = args.map( function ( arg ) {
-            return parseArg( arg )
-          } )
-
-          parsedArgs && debugLog( ' == parsedArgs == ' + parsedArgs.length )
-          parsedArgs && debugLog( parsedArgs )
-
-          let value = fn.apply(
-            that,
-            parsedArgs
-          )
-
-          debugLog( 'value: ' + value )
-
-          _resolve()
-          async function _resolve () {
-            // await promise values before resolving through ipc
-            if ( value && typeof value === 'object' && typeof value.then === 'function' ) {
-              // is a promise
-              const promise = value
-
-              promise.then( function ( newValue ) {
-                debugLog( 'promise:then' )
-                value = newValue
-                return _resolve()
-              } )
-
-              promise.catch( function ( err ) {
-                debugLog( 'promise:catch' )
-
-                console.log( 'error: ' + err )
-                console.log( err )
-
-                // show app on error
-                app.dock && app.dock.show && app.dock.show()
-                page && page.show && page.show()
-                page && page.webContents && page.webContents.openDevTools()
-
-                return emit( {
-                  type: 'resolve',
-                  messageId: json.messageId,
-                  error: serializeError( err )
-                } )
-              } )
-            } else {
-              finish()
-            }
-          }
-
-          function finish () {
-            debugLog( ' == finish == ' )
-            debugLog( 'finish value: ' + value )
-
-            emit( {
-              type: 'resolve',
-              messageId: json.messageId,
-              value: value
-            } )
-          }
-        }
-        break
-
-      // special case for executing eleko helper fn's
-      case 'page:eleko':
-        {
-          debugLog( ' === page:eleko === ' )
-
-          const pageIndex = json.pageIndex
-          const page = _pages.find( function ( page ) { return page._eleko_data.pageIndex === json.pageIndex } )
-
-          // fatal error
-          if ( !page ) throw new Error( 'no such pageIndex found: ' + json.pageIndex )
-
-          debugLog( 'page found' )
-
-          const query = json.query
-          const args = json.args
-
-          debugLog( 'query: ' + query )
-          debugLog( 'args: ' + args )
-
-          const fn = eleko[ query ]
-          let that = eleko
-
-          debugLog( query )
-          debugLog( fn )
-
-          args && debugLog( ' == args == ' + args.length )
-          args && debugLog( args )
-
-          const parsedArgs = args.map( function ( arg ) {
-            return parseArg( arg )
-          } )
-
-          parsedArgs && debugLog( ' == parsedArgs == ' + parsedArgs.length )
-          parsedArgs && debugLog( parsedArgs )
-
-          let value = fn.apply(
-            that,
-            [ page ].concat( parsedArgs )
-          )
-
-          debugLog( 'value: ' + value )
-
-          _resolve()
-          async function _resolve () {
-            // await promise values before resolving through ipc
-            if ( value && typeof value === 'object' && typeof value.then === 'function' ) {
-              // is a promise
-              const promise = value
-
-              promise.then( function ( newValue ) {
-                debugLog( 'promise:then' )
-                value = newValue
-                return _resolve()
-              } )
-
-              promise.catch( function ( err ) {
-                debugLog( 'promise:catch' )
-
-                console.log( 'error: ' + err )
-                console.log( err )
-
-                // show app on error
-                app.dock && app.dock.show && app.dock.show()
-                page && page.show && page.show()
-                page && page.webContents && page.webContents.openDevTools()
-
-                return emit( {
-                  type: 'resolve',
-                  messageId: json.messageId,
-                  error: serializeError( err )
-                } )
-              } )
-            } else {
-              finish()
-            }
-          }
-
-          function finish () {
-            debugLog( ' == finish == ' )
-            debugLog( 'finish value: ' + value )
-
-            emit( {
-              type: 'resolve',
-              messageId: json.messageId,
-              value: value
-            } )
-          }
-        }
-        break
-
-      default:
-        debugLog( 'electron unknown type: ' + type )
-    }
-  } catch ( err ) {
-    console.log( err )
-    emit( {
-      type: 'error',
-      error: serializeError( err )
-    } )
-  }
-}
-
-function emit ( json )
-{
-  if ( typeof json !== 'object') throw new TypeError( 'json must be of type object' )
-
-  debugLog( 'emit type: ' + json.type )
-
-  const jsonString = JSON.stringify( json )
-  process.stdout.write( jsonString + '\n' )
-}
-
-function findFirstMethod ( obj ) {
-  const keys = Object.keys( obj )
 }
