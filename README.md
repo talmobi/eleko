@@ -326,11 +326,6 @@ From node using the launch api setup an IPC for a basic api.
 
 ## Test
 
-#### play youtube video test while blocking ads ( requries internet access )
-```
-npm run test:youtube
-```
-
 #### test node context launch api against a local server
 ```
 npm run test:node
@@ -338,7 +333,22 @@ npm run test:node
 
 #### test electron context helper functions against a local server
 ```
+npm run test:electron
+```
+
+#### play youtube video test while blocking ads ( requries internet access )
+```
 npm run test:youtube
+```
+
+#### play youtube h264 video ( default chromium can't play these )
+```
+npm run test:h264
+```
+
+#### play youtube av1 video ( some wooly all-codecs chromium builds can't play these )
+```
+npm run test:av1
 ```
 
 #### run all tests
