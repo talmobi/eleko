@@ -372,7 +372,7 @@ function launch ( launchOptions )
               callback: function q_callback ( err, data ) {
                 if ( q_callback.done ) return
                 q_callback.done = true
-                log( 1, 'queue page:evaluate callback' )
+                log( 1, 'queue page:setUserAgent callback' )
                 if ( err ) return reject( err )
                 resolve( data )
               }
@@ -398,7 +398,7 @@ function launch ( launchOptions )
               callback: function q_callback ( err, data ) {
                 if ( q_callback.done ) return
                 q_callback.done = true
-                log( 1, 'queue page:evaluate callback' )
+                log( 1, 'queue page:getUserAgent callback' )
                 if ( err ) return reject( err )
                 resolve( data )
               }
@@ -409,6 +409,8 @@ function launch ( launchOptions )
         }
 
         page.on = function page_on ( evt, callback ) {
+          log( 1, 'api.page.on' )
+
           switch ( evt ) {
             case 'request':
               page.onrequest = callback
