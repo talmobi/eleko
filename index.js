@@ -474,8 +474,14 @@ function launch ( launchOptions )
       }
 
       return browser._close_promise = new Promise ( async function ( resolve, reject ) {
+        const _force_kill_timeout = setTimeout( function () {
+          // force kill
+          _nz.kill()
+        }, 1000 * 10 )
+
         browser._close_callback = function ( err, val ) {
           if ( browser._close_callback.done ) return
+          clearTimeout( _force_kill_timeout )
           browser._close_callback.done = true
 
           if ( err ) return reject( err )
