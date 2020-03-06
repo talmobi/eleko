@@ -308,7 +308,7 @@ function launch ( launchOptions )
 
           if ( typeof query === 'string' ) {
             function fn ( querySelector ) {
-              return document.querySelector( querySelector )
+              return !!document.querySelector( querySelector )
             }
             return page.waitFor( opts, fn, query )
           }
@@ -318,6 +318,7 @@ function launch ( launchOptions )
               const t = setTimeout( resolve, query )
               page._timeouts.push( t )
             } else if ( typeof query === 'function' ) {
+              const fn = query
               let _tick_timeout
 
               function finish ( err ) {
