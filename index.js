@@ -355,6 +355,17 @@ function launch ( launchOptions )
           } )
         }
 
+        page.on = function page_on ( evt, callback ) {
+          switch ( evt ) {
+            case 'request':
+              page.onrequest = callback
+              break
+
+            default:
+              throw new Error( 'error: unknown page.on evt: ' + evt )
+          }
+        }
+
         page.close = function page_close () {
           log( 1, 'api.page.close' )
 
