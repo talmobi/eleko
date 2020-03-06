@@ -236,6 +236,9 @@ ipc.on( 'promise:page:evaluate', async function ( req ) {
     ...args
   ]
 
+  log( 1, 'page:evaluate args' )
+  log( 1, applyArgs.slice( 2 ) )
+
   try {
     log( 1, 'promise:page:evaluate:waiting' )
     const value = await eleko.evaluate.apply( this, applyArgs )
