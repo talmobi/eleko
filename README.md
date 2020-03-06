@@ -6,7 +6,7 @@ a few electron helper functions (mimics puppeteer API) + launch function that re
 
 ## Easy to use
 ```javascript
-  const eleko = require( '../index.js' )
+  const eleko = require( 'eleko' )
 
   ;( async function () {
     const browser = await eleko.launch()
@@ -73,7 +73,7 @@ a few electron helper functions (mimics puppeteer API) + launch function that re
   ```javascript
     // this file is run with the electron binary
     const electron = require( 'electron' )
-    const eleko = require( '../index.js' )
+    const eleko = require( 'eleko' )
 
     // Module to control application life
     const app = electron.app
@@ -178,7 +178,7 @@ a few electron helper functions (mimics puppeteer API) + launch function that re
 
   ```javascript
     const electron = require( 'electron' )
-    const eleko = require( '../index.js' )
+    const eleko = require( 'eleko' )
 
     const fs = require( 'fs' )
     const path = require( 'path' )
