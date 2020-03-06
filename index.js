@@ -340,6 +340,7 @@ function launch ( launchOptions )
               }, WAITFOR_TIMEOUT_TIME )
               page._timeouts.push( _wait_timeout )
 
+              _tick_timeout = setTimeout( tick, 1 ) // start polling
               async function tick () {
                 log( 1, 'api.page.waitFor tick' )
 
