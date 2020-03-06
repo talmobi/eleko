@@ -248,6 +248,60 @@ ipc.on( 'promise:page:evaluate', async function ( req ) {
   }
 } )
 
+ipc.on( 'promise:page:setUserAgent', async function ( req ) {
+  log( 1, 'promise:page:setUserAgent' )
+
+  log( 1, req.data )
+
+  const page = _pages[ req.data.id ]
+  const data = req.data
+
+  log( 1, 'page:' )
+  log( 1, page )
+
+  if ( !page ) {
+    return req.callback( 'no page found for id: ' + req.data.id )
+  }
+
+  try {
+    log( 1, 'promise:page:setUserAgent:waiting' )
+    const value = await eleko.setUserAgent.apply( this, [ page.win, data.userAgent ] )
+    log( 1, 'promise:page:setUserAgent:done' )
+    req.callback( undefined, value )
+  } catch ( err ) {
+    log( 1, 'promise:page:setUserAgent:error' )
+    console.log( err )
+    req.callback( err && err.message || err )
+  }
+} )
+
+ipc.on( 'promise:page:getUserAgent', async function ( req ) {
+  log( 1, 'promise:page:getUserAgent' )
+
+  log( 1, req.data )
+
+  const page = _pages[ req.data.id ]
+  const data = req.data
+
+  log( 1, 'page:' )
+  log( 1, page )
+
+  if ( !page ) {
+    return req.callback( 'no page found for id: ' + req.data.id )
+  }
+
+  try {
+    log( 1, 'promise:page:getUserAgent:waiting' )
+    const value = await eleko.getUserAgent.apply( this, [ page.win ] )
+    log( 1, 'promise:page:getUserAgent:done' )
+    req.callback( undefined, value )
+  } catch ( err ) {
+    log( 1, 'promise:page:getUserAgent:error' )
+    console.log( err )
+    req.callback( err && err.message || err )
+  }
+} )
+
 // Quit when all windows are closed.
 app.on( 'window-all-closed', function () {
   // On OS X it is common for applications and their menu bar

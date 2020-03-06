@@ -355,6 +355,59 @@ function launch ( launchOptions )
           } )
         }
 
+        page.setUserAgent = function page_setUserAgent ( userAgent ) {
+          log( 1, 'api.page.setUserAgent' )
+
+          const content = {
+            userAgent: userAgent,
+            id: page.id
+          }
+
+          return new Promise( async function ( resolve, reject ) {
+            const evt = { type: 'page:setUserAgent', content: content }
+            const queue = page.queue
+
+            queue.push( {
+              evt: evt,
+              callback: function q_callback ( err, data ) {
+                if ( q_callback.done ) return
+                q_callback.done = true
+                log( 1, 'queue page:evaluate callback' )
+                if ( err ) return reject( err )
+                resolve( data )
+              }
+            } )
+
+            page._queue_tick()
+          } )
+        }
+
+        page.getUserAgent = function page_getUserAgent () {
+          log( 1, 'api.page.getUserAgent' )
+
+          const content = {
+            id: page.id
+          }
+
+          return new Promise( async function ( resolve, reject ) {
+            const evt = { type: 'page:getUserAgent', content: content }
+            const queue = page.queue
+
+            queue.push( {
+              evt: evt,
+              callback: function q_callback ( err, data ) {
+                if ( q_callback.done ) return
+                q_callback.done = true
+                log( 1, 'queue page:evaluate callback' )
+                if ( err ) return reject( err )
+                resolve( data )
+              }
+            } )
+
+            page._queue_tick()
+          } )
+        }
+
         page.on = function page_on ( evt, callback ) {
           switch ( evt ) {
             case 'request':
