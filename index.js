@@ -341,8 +341,10 @@ function launch ( launchOptions )
               page._timeouts.push( _wait_timeout )
 
               async function tick () {
+                log( 1, 'api.page.waitFor tick' )
+
                 try {
-                  const done = await page.evaluate( query, args )
+                  const done = await page.evaluate( fn, ...args )
                   if ( done ) return finish()
                 } catch ( err ) {
                   return finish( err )
