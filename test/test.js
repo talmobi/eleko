@@ -402,7 +402,7 @@ test( 'page.on( "request", ... )', async function ( t ) {
 
   // clear request handler at end
   offOnRequest()
-  t.equal( _page._listeners[ 'request' ].length, 0 )
+  t.equal( _page.onrequest, undefined )
 } )
 
 test( 'close test http server', async function ( t ) {
