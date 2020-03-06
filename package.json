@@ -5,10 +5,7 @@
   "main": "index.js",
   "files": [
     "index.js",
-    "cli.js",
-    "electron-main.js",
-    "easylist.txt",
-    "help.txt"
+    "electron-main.js"
   ],
   "scripts": {
     "download-easylist": "npm run download-easylist-1 || npm run download-easylist-2",
