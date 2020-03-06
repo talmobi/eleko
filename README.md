@@ -325,7 +325,23 @@ From node using the launch api setup an IPC for a basic api.
 [puppeteer-electron](https://www.npmjs.com/package/puppeteer-electron)
 
 ## Test
+
+#### play youtube video test while blocking ads ( requries internet access )
+```
+npm run test:youtube
+```
+
+#### test node context launch api against a local server
+```
+npm run test:node
+```
+
+#### test electron context helper functions against a local server
+```
+npm run test:youtube
+```
+
+#### run all tests
 ```
 npm test
 ```
-
