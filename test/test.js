@@ -37,7 +37,7 @@ let _browser
 let _page
 test( 'launch', async function ( t ) {
   t.timeoutAfter( 8000 )
-  t.plan( 3 )
+  t.plan( 2 )
 
   const browser = await eleko.launch()
   t.ok( browser.spawn.pid )
@@ -68,7 +68,6 @@ test( 'launch', async function ( t ) {
   await page.setUserAgent( userAgent )
   console.log( 'setUserAgent' )
 
-  t.equal( userAgent, await page.call( 'webContents.session.getUserAgent' ), 'user agent set OK' )
   t.equal( userAgent, await page.getUserAgent(), 'user agent set OK' )
 } )
 
@@ -403,7 +402,7 @@ test( 'page.on( "request", ... )', async function ( t ) {
 
   // clear request handler at end
   offOnRequest()
-  t.equal( _page._listeners[ 'request' ].length, 0 )
+  t.equal( _page.onrequest, undefined )
 } )
 
 test( 'close test http server', async function ( t ) {
