@@ -100,8 +100,7 @@ app.on( 'ready', async function () {
 } )
 
 ipc.on( 'heartbeat', function () {
-  const now = Date.now()
-  startCheckingHeartbeats.lastHeartbeat = now
+  startCheckingHeartbeats.lastHeartbeat = Date.now()
 } )
 
 function startCheckingHeartbeats () {
