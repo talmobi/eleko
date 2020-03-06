@@ -321,6 +321,9 @@ function launch ( launchOptions )
               const fn = query
               let _tick_timeout
 
+              log( 1, 'api.page.waitFor args: ' )
+              log( 1, args )
+
               function finish ( err ) {
                 if ( finish.done ) return
                 finish.done = true
