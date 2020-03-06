@@ -2,7 +2,7 @@
 [![npm](https://img.shields.io/npm/l/eleko.svg?maxAge=3600&style=flat-square)](https://github.com/talmobi/eleko/blob/master/LICENSE)
 
 #  eleko
-a few electron helper functions (mimics puppeteer API) + launch function that returns a small API subset (that also mimics puppeteer API) for spawning electron pages from node
+a few electron helper functions (mimics puppeteer API) usable inside electron context + node context launch function that spawns an electron child process with an easy to use subset of the same helper functions (mimics puppeteer API)
 
 ## Easy to use
 ```javascript
