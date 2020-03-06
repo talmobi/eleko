@@ -146,7 +146,7 @@ ipc.on( 'promise', function ( p ) {
   ipc.emit( 'promise:' + data.type, req )
 } )
 
-ipc.on( 'close', function () {
+ipc.on( 'promise:quit', function () {
   log( 1, 'exit: browser.close() called' )
   setTimeout( function () {
     app.quit()

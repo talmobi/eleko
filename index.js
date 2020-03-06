@@ -465,6 +465,32 @@ function launch ( launchOptions )
       } )
     }
 
+
+    browser.close = function browser_close () {
+      log( 1, 'api.browser.close' )
+
+      if ( browser._close_promise ) {
+        return browser._close_promise
+      }
+
+      return browser._close_promise = new Promise ( async function ( resolve, reject ) {
+        browser._close_callback = function ( err, val ) {
+          if ( browser._close_callback.done ) return
+          browser._close_callback.done = true
+
+          if ( err ) return reject( err )
+          return resolve( val )
+        }
+
+        try {
+          const r = await ipc.promise( { type: 'quit' } )
+          // should quit and trigger spawn 'close' evt handler
+        } catch ( err ) {
+          browser._close_callback( err )
+        }
+      } )
+    }
+
     spawn.on( 'close', function ( code ) {
       clearTimeout( _heartbeatTimeout )
       log( 1, 'electron spawn exited, code: ' + code )
@@ -472,6 +498,10 @@ function launch ( launchOptions )
 
       browser.emit( 'exit', code )
       browser.emit( 'close', code )
+
+      if ( browser._close_callback ) {
+        browser._close_callback()
+      }
     } )
 
     browserResolve( browser )
