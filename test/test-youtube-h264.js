@@ -67,7 +67,7 @@ test( 'play youtube video', async function ( t ) {
 
   console.log( time )
   t.ok( time.currentTime > 1, 'currentTime ok' )
-  t.equal( time.duration | 0, 397, 'duration ok' )
+  t.equal( time.duration | 0, 1051, 'duration ok' )
 
   await browser.close()
   t.pass( 'browser closed' )
