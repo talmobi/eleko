@@ -91,6 +91,14 @@ let _appReady = false
 
 const ipc = stdioipc.create( process.stdin, process.stdout )
 
+// This method will be called when Electron has finished
+// initialization and is ready to create browser windows.
+// Some APIs can only be used after this event occurs
+app.on( 'ready', async function () {
+  checkHeartbeat() // start checking heartbeats after ready
+  ipc.emit( 'ready' )
+} )
+
 let _lastHeartBeat = Date.now()
 let _heartbeatTimeout
 ipc.on( 'heartbeat', function () {
@@ -98,7 +106,6 @@ ipc.on( 'heartbeat', function () {
   _lastHeartBeat = now
 } )
 
-checkHeartbeat() // start checking heartbeats
 function checkHeartbeat () {
   const now = Date.now()
   const delta = now - _lastHeartBeat
@@ -236,13 +243,6 @@ ipc.on( 'promise:page:evaluate', async function ( req ) {
     console.log( err )
     req.callback( err && err.message || err )
   }
-} )
-
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs
-app.on( 'ready', async function () {
-  ipc.emit( 'ready' )
 } )
 
 // Quit when all windows are closed.
