@@ -5,10 +5,7 @@ const url = require( 'url' )
 const eeto = require( 'eeto' )
 
 const nozombie = require( 'nozombie' )
-const functionToString = require( 'function-to-string' )
 const pf = require( 'parse-function' )()
-
-const { serializeError, deserializeError } = require( 'serialize-error' )
 
 const stdioipc = require( './stdio-ipc.js' )
 
@@ -897,26 +894,4 @@ function onrequest ( mainWindow, listener )
       listener( req )
     }
   )
-}
-
-function encodeArg ( arg )
-{
-  const type = typeof arg
-  let content
-  if ( type === 'object' || type === 'boolean' ) {
-    content = JSON.stringify( arg )
-  } else if ( type === 'string' ) {
-    content = arg
-  } else if ( type === 'number' ) {
-    content = arg
-  } else if ( type === 'function' ) {
-    content = JSON.stringify(
-      functionToString( arg )
-    )
-  }
-
-  return {
-    type: type,
-    content: content
-  }
 }
