@@ -726,11 +726,16 @@ function goto ( mainWindow, url )
 
   return new Promise( async function ( resolve, reject ) {
     setTimeout( startLoading, 1 )
-    function startLoading () {
+    async function startLoading () {
       log( 1, ' === goto:startLoading === ' )
+
+      if ( !mainWindow.webContents.getURL() ) {
+        await mainWindow.webContents.loadURL( 'about:blank' )
+      }
 
       setTimeout( async function () {
         log( 1, ' === goto:document.location.href === ' )
+
         // mainWindow.webContents.loadURL( url )
         try {
           const r = await evaluate( mainWindow, function ( url ) {
