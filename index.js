@@ -421,6 +421,9 @@ function launch ( launchOptions )
           switch ( evt ) {
             case 'request':
               page.onrequest = callback
+              return function off () {
+                page.onrequest = undefined
+              }
               break
 
             default:
