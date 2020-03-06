@@ -233,7 +233,7 @@ ipc.on( 'promise:page:evaluate', async function ( req ) {
   const applyArgs = [
     page.win,
     evalFn,
-    args
+    ...args
   ]
 
   try {
