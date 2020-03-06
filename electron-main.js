@@ -95,20 +95,24 @@ const ipc = stdioipc.create( process.stdin, process.stdout )
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs
 app.on( 'ready', async function () {
-  checkHeartbeat() // start checking heartbeats after ready
+  startCheckingHeartbeats() // start checking heartbeats after ready
   ipc.emit( 'ready' )
 } )
 
-let _lastHeartBeat = Date.now()
-let _heartbeatTimeout
 ipc.on( 'heartbeat', function () {
   const now = Date.now()
-  _lastHeartBeat = now
+  startCheckingHeartbeats.lastHeartbeat = now
 } )
 
-function checkHeartbeat () {
+function startCheckingHeartbeats () {
   const now = Date.now()
-  const delta = now - _lastHeartBeat
+
+  // init lastHeartbeat
+  if ( !startCheckingHeartbeats.lastHeartbeat ) {
+    startCheckingHeartbeats.lastHeartbeat = now
+  }
+
+  const delta = now - startCheckingHeartbeats.lastHeartbeat
 
   if ( delta > 3000 ) {
     console.log( 'exit electron: heartbeat stopped' )
@@ -118,8 +122,8 @@ function checkHeartbeat () {
     return false
   }
 
-  clearTimeout( _heartbeatTimeout )
-  _heartbeatTimeout = setTimeout( checkHeartbeat, 500 )
+  clearTimeout( startCheckingHeartbeats.timeout )
+  startCheckingHeartbeats.timeout = setTimeout( startCheckingHeartbeats, 500 )
   return true
 }
 
