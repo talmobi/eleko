@@ -714,42 +714,259 @@ function waitFor ( mainWindow, query, ...args )
   } )
 }
 
-function goto ( mainWindow, url )
-{
-  log( 1, ' === goto === ' )
-  log( 1, 'url: ' + url )
+async function newPage ( options ) {
+  // inside electro context spawn BrowserWindow wrapper
+  // with custom page.goto function that replaces the underlying
+  // window
+  // TODO 
 
-  api.emit( 'pregoto' )
+  options = options || {}
 
-  return new Promise( async function ( resolve, reject ) {
-    setTimeout( startLoading, 1 )
-    async function startLoading () {
-      log( 1, ' === goto:startLoading === ' )
+  const electron = require( 'electron' )
 
-      if ( !mainWindow.webContents.getURL() ) {
-        await mainWindow.webContents.loadURL( 'about:blank' )
+  if ( typeof electron === 'string' ) {
+    throw new Error(`
+      Error: trying to launch outide of electron context.
+      You need to run with the electron binary instead of node.
+        ex. 'electron main.js'
+        ex. 'node_modules/.bin/electron main.js'
+    `)
+  }
+
+  // Module to control application life
+  const app = electron.app
+
+  // Module to create native browser window
+  const BrowserWindow = electron.BrowserWindow
+
+  return new Promise( function ( resolve, reject ) {
+    let _status = 'pollReadyState'
+    let _done = false
+
+    const _timeout = setTimeout( function () {
+      if ( _done ) return
+      _done = true
+      reject( 'error: timed out launch at ' + _status + ' stage' )
+    }, LAUNCH_TIMEOUT_TIME )
+
+    // can't attach app.on( 'ready' ) listener because it
+    // might already have been called
+    pollReadyState()
+
+    function pollReadyState () {
+      if ( _done ) return
+      log( 1, 'pollReadyState' )
+
+      if ( app.isReady() ) {
+        onReady()
+      } else {
+        setTimeout( pollReadyState, 33 )
+      }
+    }
+
+    function onReady () {
+      log( 1, 'onReady' )
+
+      _status = 'onReady new BrowserWindow'
+
+      // merge options with defaults
+      const opts = Object.assign(
+        getDefaultOptions(), options || {}
+      )
+
+      opts.webPreferences = Object.assign(
+        getDefaultOptions(), options.webPreferences || {}
+      )
+
+      // Create the browser window
+      let mainWindow = new BrowserWindow( opts )
+
+      mainWindow._options = options
+
+      const session = mainWindow.webContents.session
+
+      // set user defined userAgent
+      if ( options.userAgent ) {
+        session.setUserAgent( options.userAgent )
+      } else {
+        // set user-agent to lowest compatible by default
+        // ( Mozilla/5.0 )
+        session.setUserAgent( 'Mozilla/5.0 (https://github.com/talmobi/eleko)' )
       }
 
-      setTimeout( async function () {
-        log( 1, ' === goto:document.location.href === ' )
 
-        // mainWindow.webContents.loadURL( url )
-        try {
-          const r = await evaluate( mainWindow, function ( url ) {
-            document.location.href = url
-          }, url )
+      // const cookies = electron.session.defaultSession.cookies
+      const cookies = session.cookies
 
-          log( 1, ' === goto:document.location.href:after === ' )
-        } catch ( err ) {
-          reject( err )
-        }
-      }, 1 )
-
-      mainWindow.webContents.once( 'dom-ready', function () {
-        log( 1, ' === goto:dom-ready === ' )
-        log( 1, ' === goto:done === ' )
-        resolve()
+      // https://electronjs.org/docs/api/cookies
+      // Query all cookies.
+      cookies.get( {}, function ( error, cookies ) {
+        // console.log( error, cookies )
       } )
+
+      // Query all cookies associated with a specific url
+      cookies.get( { url: 'http://youtube.com' }, function ( error, cookies ) {
+        // console.log( error, cookies )
+      } )
+
+      // Set a cookie with the given cookie data;
+      // may overwrite equivalent cookies if they exist.
+      const cookie = { url: 'https://www.youtube.com', name: 'CONSENT', value: 'YES+', domain: '.youtube.com' }
+      cookies.set( cookie, function ( error ) {
+        if ( error ) console.error( error )
+      } )
+
+
+      _status = 'finish'
+      finish()
+      async function finish () {
+        log( 1, 'newPage:finish' )
+        if ( _done ) {
+          // we already timed out and yet now the window is ready,
+          // should rarely happen
+          log( 1, 'warning: launch finished but was timed out earlier (launch timeout too short?)' )
+          return
+        }
+        _done = true
+
+        const page = { win: mainWindow }
+
+        _pages._ids = ( _pages._ids || 1 )
+        page.id = _pages._ids++
+        page._id = page.id
+
+        // save global reference
+        _pages[ page.id ] = page
+
+        // Emitted when the window is closed
+        mainWindow.on( 'closed', function () {
+          log( 2, 'window closed (page.id: ' + page.id + ')' )
+          log( 2, 'window closed (page._id: ' + page._id + ')' )
+
+          // Dereference the window object, usually you would store windows
+          // in an array if your app supports multi windows, this is the time
+          // when you should delete the corresponding element.
+          // But only if the underlying window hasn't been replaced with a new one
+          if ( page.win === mainWindow ) {
+            log( 1, 'window closed (page.id: ' + page.id + ')' )
+            log( 1, 'window closed (page._id: ' + page._id + ')' )
+            log( 1, 'deleted page.win (page.id: ' + page.id + ')' )
+            delete page.win
+          }
+        } )
+
+        page.goto = async function page_goto ( url ) {
+          // create a new page and replace the underlying window
+          // with the new one
+
+          log( 1, ' === page.goto === ' )
+          log( 1, 'url: ' + url )
+
+          if ( page._pending_goto_callback ) {
+            page._pending_goto_callback( 'error: replaced with newer page.goto call' )
+            delete page._reject_pending_goto
+          }
+
+          return new Promise( async function ( resolve, reject ) {
+            log( 1, ' === page.goto:new Promise === ' )
+
+            function callback ( err ) {
+              if ( callback.done ) return
+              callback.done = true
+
+              if ( err ) return reject( err )
+              resolve()
+            }
+            page._pending_goto_callback = callback
+
+            const mainWindow = page.win // current window (soon replaced)
+
+            const session = mainWindow.webContents.session
+            const userAgent = session.getUserAgent()
+            log( 1, ' === page.goto:got userAgent === ' )
+
+            const _onrequest = mainWindow._eleko_onrequest
+            if ( _onrequest ) {
+              session.webRequest.onBeforeRequest( function ( details, callback ) {
+                return callback( { cancel: true } )
+              } )
+            }
+            log( 1, ' === page.goto:onBeforeRequest cancel all === ' )
+
+            const isDevToolsOpen = mainWindow.webContents.isDevToolsOpened()
+            log( 1, ' === page.goto:isDevToolsOpen: ' + isDevToolsOpen )
+
+            const isVisible = mainWindow.isVisible()
+            log( 1, ' === page.goto:isVisible: ' + isVisible )
+
+            log( 1, ' === page.goto:newPage === ' )
+            const _newPage = await newPage( options )
+
+            log( 1, ' === page.goto:destroy === ' )
+            mainWindow.destroy() // destroy the old window
+            page.win = _newPage.win // use the new window
+            page._id = _newPage._id
+
+            log( 1, ' === page.goto:newPage.id: ' + _newPage.id )
+            delete _pages[ _newPage.id ] // delete the global ref
+
+            if ( isDevToolsOpen ) {
+              page.win.webContents.openDevTools()
+            } else {
+              page.win.webContents.closeDevTools()
+            }
+            log( 1, ' === page.goto:set DevTools === ' )
+
+            if ( isVisible ) {
+              page.win.show()
+              // show dock icon if showing window
+              app.dock && app.dock.show && app.dock.show()
+            } else {
+              page.win.hide()
+            }
+            log( 1, ' === page.goto:set visibility === ' )
+
+            if ( userAgent ) {
+              const session = page.win.webContents.session
+              session.setUserAgent( userAgent )
+              log( 1, ' === page.goto:set userAgent === ' )
+            }
+
+            // transfer request listener over to new window
+            if ( _onrequest ) {
+              onrequest( page.win, _onrequest )
+              log( 1, ' === page.goto:set onrequest === ' )
+            }
+
+            log( 1, ' === page.goto:loadURL === ' )
+            page.win.webContents.loadURL( url )
+            // TODO add timeout?
+
+            page.win.webContents.once( 'dom-ready', function () {
+              log( 1, ' === page.goto:dom-ready === ' )
+              log( 1, ' === page.goto:done === ' )
+
+              delete page._pending_goto_callback
+              callback( undefined )
+            } )
+          } )
+        }
+
+        if ( _envs.debug || _envs.devtools ) {
+          mainWindow.webContents.openDevTools()
+        }
+
+        if ( options.show ) {
+          mainWindow.show()
+          // show dock icon if showing window
+          app.dock && app.dock.show && app.dock.show()
+        }
+
+        await mainWindow.webContents.loadURL( 'about:blank' )
+
+        clearTimeout( _timeout )
+        resolve( page )
+      }
     }
   } )
 }
@@ -798,6 +1015,7 @@ function parseFunction ( fn, args )
 function onrequest ( mainWindow, listener )
 {
   const session = mainWindow.webContents.session
+  mainWindow._eleko_onrequest = listener
 
   // attach request handler
   session.webRequest.onBeforeRequest(
