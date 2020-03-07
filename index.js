@@ -20,6 +20,8 @@ Object.keys( process.env ).forEach(
   }
 )
 
+const _pages = {}
+
 const verbosity = (
   _envs.debug ? 10 : _envs.verbose
 )
@@ -53,6 +55,7 @@ api.evaluate = evaluate
 api.setUserAgent = setUserAgent
 api.getUserAgent = getUserAgent
 api.onrequest = onrequest
+api.newPage = newPage
 
 api.getDefaultOptions = getDefaultOptions
 
