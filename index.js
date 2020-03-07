@@ -61,7 +61,7 @@ api.getDefaultOptions = getDefaultOptions
 
 const WAITFOR_TIMEOUT_TIME = 1000 * 30 // 30 seconds
 const POLL_INTERVAL = 200 // milliseconds
-const LAUNCH_TIMEOUT_TIME = 10 * 1000
+const LAUNCH_TIMEOUT_TIME = 30 * 1000 // 30 seconds
 
 // TODO add software rendering opts
 // ref: https://swiftshader.googlesource.com/SwiftShader
