@@ -689,7 +689,7 @@ async function newPage ( options ) {
       )
 
       opts.webPreferences = Object.assign(
-        getDefaultOptions(), options.webPreferences || {}
+        getDefaultOptions().webPreferences, options.webPreferences || {}
       )
 
       // Create the browser window
