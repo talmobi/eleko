@@ -751,6 +751,7 @@ async function newPage ( options ) {
 
         // save global reference
         _pages[ page.id ] = page
+        log( 1, 'newPage:globalref' )
 
         // Emitted when the window is closed
         mainWindow.on( 'closed', function () {
@@ -769,6 +770,7 @@ async function newPage ( options ) {
           }
         } )
 
+        log( 1, 'newPage:define goto' )
         page.goto = async function page_goto ( url ) {
           // create a new page and replace the underlying window
           // with the new one
@@ -876,7 +878,9 @@ async function newPage ( options ) {
           app.dock && app.dock.show && app.dock.show()
         }
 
+        log( 1, 'newPage:await about:blank' )
         await mainWindow.webContents.loadURL( 'about:blank' )
+        log( 1, 'newPage:done about:blank' )
 
         clearTimeout( _timeout )
         resolve( page )
