@@ -327,173 +327,45 @@ app.on( 'activate', function () {
   // }
 })
 
-async function createPage ( options )
-{
-  log( 1, ' === createPage === ' )
+function attachInitialOnBeforeRequestHandler ( page ) {
+  const mainWindow = page.win
+  const session = mainWindow.webContents.session
 
-  return new Promise( async function ( resolve, reject ) {
-    options = options || {}
+  // attach request handler
+  session.webRequest.onBeforeRequest(
+    async function ( details, callback ) {
+      let url = details.url
 
-    options = Object.assign(
-      {},
-      {
-        show: !!( _envs.show || _envs.debug ),
-        width: 800,
-        height: 600,
-        webPreferences: {}
-      },
-      options
-    )
-
-    // setup options.webPreferences
-    // ( Object.assign isn't recursive )
-    options.webPreferences = Object.assign(
-      {},
-      {
-        autoplayPolicy: [ 'no-user-gesture-required', 'user-gesture-required', 'document-user-activation-required' ][ 2 ],
-
-        // javascript: false,
-        images: false,
-        webgl: false,
-
-        // security stuff
-        nodeIntegration: false,
-        webviewTag: false,
-        contextIsolation: true,
-        enableRemoteModule: false,
-
-        // preload: path.join( __dirname, 'electron-preload.js' )
-      },
-      options.webPreferences
-    )
-
-    if ( options.show ) {
-      // show dock icon if showing window
-      app.dock && app.dock.show && app.dock.show()
-    }
-
-    log( 1, 'normalized options' )
-
-    // Create the browser window
-    log( 1, 'creating new BrowserWindow...' )
-    const mainWindow = new BrowserWindow( options )
-    log( 1, 'new BrowserWindow' )
-
-    const session = mainWindow.webContents.session
-
-    // set user-agent lowest compatible by default
-    session.setUserAgent( 'Mozilla/5.0 (https://github.com/talmobi/eleko)' )
-
-    // const cookies = electron.session.defaultSession.cookies
-    const cookies = session.cookies
-
-    // https://electronjs.org/docs/api/cookies
-    // Query all cookies.
-    cookies.get( {}, function ( error, cookies ) {
-      // console.log( error, cookies )
-    } )
-
-    // Query all cookies associated with a specific url
-    cookies.get( { url: 'http://youtube.com' }, function ( error, cookies ) {
-      // console.log( error, cookies )
-    } )
-
-    // Set a cookie with the given cookie data;
-    // may overwrite equivalent cookies if they exist.
-    const cookie = { url: 'https://www.youtube.com', name: 'CONSENT', value: 'YES+', domain: '.youtube.com' }
-    cookies.set( cookie, function ( error ) {
-      if ( error ) console.error( error )
-    } )
-
-    mainWindow.on( 'ready-to-show', function () {
-      log( 1, 'ready-to-show' )
-      // mainWindow.show()
-    } )
-
-    // and load the index.html of the app
-    // mainWindow.loadFile(
-    // path.join( __dirname, 'index.html' )
-    // )
-
-    // Open the DevTools in debug mode by default
-    if ( _envs.debug || _envs.devtools ) {
-      mainWindow.webContents.openDevTools()
-    }
-
-    // load url
-    log( 1, 'opening about:blank...' )
-    // TODO turn once dom-ready into promise
-    let _resolveDomReady
-    const _promiseDomReady = new Promise( function ( resolve ) {
-      _resolveDomReady = resolve
-    })
-    mainWindow.webContents.once( 'dom-ready', function () {
-      log( 1, 'dom-ready' )
-      _resolveDomReady()
-    } )
-    log( 1, 'about:blank' )
-    mainWindow.webContents.loadURL( 'about:blank' )
-    await _promiseDomReady
-
-    log( 1, 'awaiting document.location...' )
-    await eleko.waitFor( mainWindow, function () {
-      return !!document.location
-    } )
-    log( 1, 'document.location' )
-
-    const page = { win: mainWindow }
-    _pages._ids = ( _pages._ids || 1 )
-    page.id = _pages._ids++
-    _pages[ page.id ] = page
-
-    // Emitted when the window is closed
-    mainWindow.on( 'closed', function () {
-      log( 1, 'window closed (page.id: ' + page.id + ')' )
-
-      // Dereference the window object, usually you would store windows
-      // in an array if your app supports multi windows, this is the time
-      // when you should delete the corresponding element
-      delete page.win
-    } )
-
-    // attach request handler
-    session.webRequest.onBeforeRequest(
-      async function ( details, callback ) {
-        let url = details.url
-
-        // special cases to always allow
-        if ( url.indexOf( 'devtools' ) === 0 ) {
-          return callback( { cancel: false } )
-        }
-        if ( url.indexOf( 'about:blank' ) === 0 ) {
-          return callback( { cancel: false } )
-        }
-        if (
-          url.indexOf( 'http' ) !== 0 &&
-          url.indexOf( 'file' ) !== 0
-        ) {
-          return callback( { cancel: false } )
-        }
-
-        log( 2, ' == onBeforeRequest: ' + url.slice( 0, 23 ) )
-
-        const shouldBlock = await ipc.promise( {
-          type: 'page:onrequest',
-          pageId: page.id,
-          details: details
-        } )
-
-        log( 2, 'shouldBlock: ' + shouldBlock )
-
-        if ( shouldBlock ) {
-          log( 2, ' (x) url blocked: ' + url.slice( 0, 55 ) )
-          callback( { cancel: true } ) // block
-        } else {
-          callback( { cancel: false } ) // let through
-        }
+      // special cases to always allow
+      if ( url.indexOf( 'devtools' ) === 0 ) {
+        return callback( { cancel: false } )
       }
-    )
+      if ( url.indexOf( 'about:blank' ) === 0 ) {
+        return callback( { cancel: false } )
+      }
+      if (
+        url.indexOf( 'http' ) !== 0 &&
+        url.indexOf( 'file' ) !== 0
+      ) {
+        return callback( { cancel: false } )
+      }
 
-    resolve( page )
-  } )
+      log( 2, ' == onBeforeRequest: ' + url.slice( 0, 23 ) )
+
+      const shouldBlock = await ipc.promise( {
+        type: 'page:onrequest',
+        pageId: page.id,
+        details: details
+      } )
+
+      log( 2, 'shouldBlock: ' + shouldBlock )
+
+      if ( shouldBlock ) {
+        log( 2, ' (x) url blocked: ' + url.slice( 0, 55 ) )
+        callback( { cancel: true } ) // block
+      } else {
+        callback( { cancel: false } ) // let through
+      }
+    }
+  )
 }
