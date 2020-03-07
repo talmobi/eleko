@@ -894,15 +894,14 @@ function goto ( mainWindow, url ) {
   // ex: page = await newPage()
   // await page.goto( url )
 
-  return new Promise( function ( resolve, reject ) {
-    mainWindow.loadURL( url )
-
-    mainWindow.webContents.once( 'dom-ready', function () {
-      log( 1, ' === goto:dom-ready === ' )
-      log( 1, ' === goto:done === ' )
-      resolve()
-    } )
-  } )
+  throw new Error( 'error: eleko.goto bas been removed in favor of eleko.newPage wrapper' )
+  throw new Error(`
+    Error: eleko.goto has been removed in favor of eleko.newPage wrapper.
+    usage:
+    const page = await eleko.newPage( { show: true } )
+    page.goto( 'https://google.com' )
+    console.log( page.win ) // access internal BrowserWindow object (will mutate after every page.goto)
+  `)
 }
 
 function evaluate ( mainWindow, fn, ...args )
