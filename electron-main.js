@@ -70,7 +70,7 @@ Object.keys( process.env ).forEach(
 )
 
 const verbosity = (
-  _envs.debug ? 10 : _envs.verbose
+  _envs.debug ? 10 : Number( _envs.verbose )
 )
 
 function log ( level, message ) {
