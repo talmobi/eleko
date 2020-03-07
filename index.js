@@ -67,7 +67,7 @@ const LAUNCH_TIMEOUT_TIME = 30 * 1000 // 30 seconds
 // ref: https://swiftshader.googlesource.com/SwiftShader
 // ref: https://github.com/google/swiftshader
 const DEFAULT_OPTS = {
-  show: false,
+  show: !!( _envs.show || _envs.debug ),
 
   width: 800,
   height: 600,
