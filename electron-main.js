@@ -157,7 +157,15 @@ ipc.on( 'promise:newPage', async function ( req ) {
   log( 1, 'promise:newPage' )
 
   const options = req.data
-  const page = await createPage( options )
+  const page = await eleko.newPage( Object.assign(
+    {
+      show: !!( _envs.show || _envs.debug ),
+    },
+    options || {}
+  ) )
+  _pages[ page.id ] = page
+
+  attachInitialOnBeforeRequestHandler( page )
 
   req.callback( undefined, page.id )
   log( 1, 'new page created' )
@@ -176,7 +184,7 @@ ipc.on( 'promise:page:goto', async function ( req ) {
 
   try {
     log( 1, 'promise:page:goto:waiting' )
-    await eleko.goto( page.win, url )
+    await page.goto( url )
     log( 1, 'promise:page:goto:done' )
     req.callback( undefined )
   } catch ( err ) {
