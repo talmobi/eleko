@@ -971,6 +971,22 @@ async function newPage ( options ) {
   } )
 }
 
+function goto ( mainWindow, url ) {
+  // DEPRECATED: use newPage api with page.goto instead
+  // ex: page = await newPage()
+  // await page.goto( url )
+
+  return new Promise( function ( resolve, reject ) {
+    mainWindow.loadURL( url )
+
+    mainWindow.webContents.once( 'dom-ready', function () {
+      log( 1, ' === goto:dom-ready === ' )
+      log( 1, ' === goto:done === ' )
+      resolve()
+    } )
+  } )
+}
+
 function evaluate ( mainWindow, fn, ...args )
 {
   log( 1, ' === evaluate === ' )
