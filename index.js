@@ -814,6 +814,11 @@ function _createWindow ( options ) {
 
     const win = new BrowserWindow( opts )
 
+    win.webContents.on( 'new-window', function ( evt, url ) {
+      // prevent popups by default
+      evt.preventDefault()
+    } )
+
     win.webContents.once( 'dom-ready', function _createWindow_domReady () {
       log( 1, '_createWindow:dom-ready' )
       // resolve( win )
