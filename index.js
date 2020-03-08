@@ -190,6 +190,7 @@ function launch ( launchOptions )
           }
           break
 
+          /*
         case 'page:will-navigate':
           {
             const pageId = data.pageId
@@ -224,6 +225,7 @@ function launch ( launchOptions )
             }
           }
           break
+          */
       }
 
       return p.resolve()

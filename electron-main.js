@@ -166,7 +166,7 @@ ipc.on( 'promise:newPage', async function ( req ) {
   _pages[ page.id ] = page
 
   attachInitialOnBeforeRequestHandler( page )
-  attachInitialWillNavigateHandler( page )
+  // attachInitialWillNavigateHandler( page )
 
   req.callback( undefined, page.id )
   log( 1, 'new page created' )
@@ -181,7 +181,7 @@ ipc.on( 'promise:page:goto', async function ( req ) {
   const url = req.data.url
 
   attachInitialOnBeforeRequestHandler( page )
-  attachInitialWillNavigateHandler( page )
+  // attachInitialWillNavigateHandler( page )
 
   log( 1, 'page:' )
   log( 1, page )
