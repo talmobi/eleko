@@ -721,66 +721,55 @@ async function newPage ( options ) {
   } )
 }
 
-      // const cookies = electron.session.defaultSession.cookies
-      const cookies = session.cookies
+function _createWindow ( options, noblank ) {
+  log( 1, '_createWindow' )
+  const opts = Object.assign( {}, options )
 
-      // https://electronjs.org/docs/api/cookies
-      // Query all cookies.
-      cookies.get( {}, function ( error, cookies ) {
-        // console.log( error, cookies )
+  // always hide window and show it when it's ready to prevent
+  // flickering
+  opts.show = false
+
+  const electron = require( 'electron' )
+
+  if ( typeof electron === 'string' ) {
+    throw new Error(`
+      Error: trying to launch outide of electron context.
+      You need to run with the electron binary instead of node.
+        ex. 'electron main.js'
+        ex. 'node_modules/.bin/electron main.js'
+    `)
+  }
+
+  const BrowserWindow = electron.BrowserWindow
+
+  return new Promise( async function ( resolve ) {
+    log( 1, '_createWindow:promise' )
+
+    const win = new BrowserWindow( opts )
+
+    if ( !noblank ) {
+      win.webContents.once( 'dom-ready', function _createWindow_domReady () {
+        log( 1, '_createWindow:dom-ready' )
+        // resolve( win )
+        resolve( win )
       } )
 
-      // Query all cookies associated with a specific url
-      cookies.get( { url: 'http://youtube.com' }, function ( error, cookies ) {
-        // console.log( error, cookies )
-      } )
+      // do not attach ready-to-show listener at it will not
+      // trigger again when we want it to after we load an
+      // actual url other than about:blank
 
-      // Set a cookie with the given cookie data;
-      // may overwrite equivalent cookies if they exist.
-      const cookie = { url: 'https://www.youtube.com', name: 'CONSENT', value: 'YES+', domain: '.youtube.com' }
-      cookies.set( cookie, function ( error ) {
-        if ( error ) console.error( error )
-      } )
-
-
-      _status = 'finish'
-      finish()
-      async function finish () {
-        log( 1, 'newPage:finish' )
-        if ( _done ) {
-          // we already timed out and yet now the window is ready,
-          // should rarely happen
-          log( 1, 'warning: launch finished but was timed out earlier (launch timeout too short?)' )
-          return
-        }
-        _done = true
-
-        const page = { win: mainWindow }
-
-        _pages._ids = ( _pages._ids || 1 )
-        page.id = _pages._ids++
-        page._id = page.id
-
-        // save global reference
-        _pages[ page.id ] = page
-        log( 1, 'newPage:globalref' )
-
-        // Emitted when the window is closed
-        mainWindow.on( 'closed', function () {
-          log( 2, 'window closed (page.id: ' + page.id + ')' )
-          log( 2, 'window closed (page._id: ' + page._id + ')' )
-
-          // Dereference the window object, usually you would store windows
-          // in an array if your app supports multi windows, this is the time
-          // when you should delete the corresponding element.
-          // But only if the underlying window hasn't been replaced with a new one
-          if ( page.win === mainWindow ) {
-            log( 1, 'window closed (page.id: ' + page.id + ')' )
-            log( 1, 'window closed (page._id: ' + page._id + ')' )
-            log( 1, 'deleted page.win (page.id: ' + page.id + ')' )
-            delete page.win
-          }
-        } )
+      log( 1, '_createWindow:blank' )
+      // we want to load a blank page in order to enter a clean
+      // state -- trying to access/work with an unlaoded window
+      // leads to unpredictable behaviour ( e.g. page evaluate
+      // hangs )
+      await win.loadURL( 'about:blank' )
+    } else {
+      log( 1, '_createWindow:resolve' )
+      resolve( win )
+    }
+  } )
+}
 
         log( 1, 'newPage:define goto' )
         page.goto = async function page_goto ( url ) {
