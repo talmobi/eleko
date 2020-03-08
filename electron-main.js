@@ -276,7 +276,7 @@ ipc.on( 'promise:page:setUserAgent', async function ( req ) {
 
   try {
     log( 1, 'promise:page:setUserAgent:waiting' )
-    const value = await eleko.setUserAgent.apply( this, [ page.win, data.userAgent ] )
+    const value = eleko.setUserAgent.apply( this, [ page.win, data.userAgent ] )
     log( 1, 'promise:page:setUserAgent:done' )
     req.callback( undefined, value )
   } catch ( err ) {
@@ -303,7 +303,7 @@ ipc.on( 'promise:page:getUserAgent', async function ( req ) {
 
   try {
     log( 1, 'promise:page:getUserAgent:waiting' )
-    const value = await eleko.getUserAgent.apply( this, [ page.win ] )
+    const value = eleko.getUserAgent.apply( this, [ page.win ] )
     log( 1, 'promise:page:getUserAgent:done' )
     req.callback( undefined, value )
   } catch ( err ) {
