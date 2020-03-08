@@ -21,6 +21,7 @@ Object.keys( process.env ).forEach(
 )
 
 const _pages = {}
+const _browsers = []
 
 const verbosity = (
   _envs.debug ? 10 : Number( _envs.verbose ) || 0
@@ -40,6 +41,11 @@ process.on( 'exit', onExit )
 function onExit ( err ) {
   if ( onExit.done ) return
   onExit.done = true
+
+  _browsers.forEach( function ( browser ) {
+    browser.close()
+  } )
+
   log( 1, 'eleko exited' )
 }
 
@@ -496,6 +502,8 @@ function launch ( launchOptions )
         }
       } )
     }
+
+    _browsers.push( browser )
 
     spawn.on( 'close', function ( code ) {
       clearTimeout( _heartbeatTimeout )
