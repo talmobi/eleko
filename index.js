@@ -700,22 +700,26 @@ async function newPage ( options ) {
         getDefaultOptions().webPreferences, options.webPreferences || {}
       )
 
-      // Create the browser window
-      let mainWindow = new BrowserWindow( opts )
-
-      mainWindow._options = options
-
-      const session = mainWindow.webContents.session
-
-      // set user defined userAgent
-      if ( options.userAgent ) {
-        session.setUserAgent( options.userAgent )
-      } else {
-        // set user-agent to lowest compatible by default
-        // ( Mozilla/5.0 )
-        session.setUserAgent( 'Mozilla/5.0 (https://github.com/talmobi/eleko)' )
+      const page = {
+        win: undefined,
+        options: mergedOptions,
+        createWindowCounter: 0
       }
 
+      _pages._ids = ( _pages._ids || 1 )
+      page.id = _pages._ids++
+      page._id = page.id
+
+      log( 1, 'attaching page.goto' )
+      _attachPageMethods( page )
+
+      clearTimeout( _timeout )
+
+      log( 1, 'resolving page' )
+      resolve( page )
+    }
+  } )
+}
 
       // const cookies = electron.session.defaultSession.cookies
       const cookies = session.cookies
