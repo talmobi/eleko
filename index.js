@@ -172,6 +172,7 @@ function launch ( launchOptions )
               }
 
               const req = details
+
               req.abort = function () {
                 log( 2, 'onrequest:abort' )
                 callback( undefined, true )
