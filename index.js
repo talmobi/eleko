@@ -884,6 +884,12 @@ async function newPage ( options ) {
           app.dock && app.dock.show && app.dock.show()
         }
 
+        mainWindow.webContents.on( 'new-window', function ( e, url ) {
+          // prevent popups by default
+          e.preventDefault()
+          log( 1, 'popup prevented: ' + url.slice( 0, 35 ) )
+        } )
+
         log( 1, 'newPage:await about:blank' )
         await mainWindow.webContents.loadURL( 'about:blank' )
         log( 1, 'newPage:done about:blank' )
