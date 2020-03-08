@@ -686,7 +686,7 @@ async function newPage ( options ) {
       }
     }
 
-    function onReady () {
+    async function onReady () {
       log( 1, 'onReady' )
 
       _status = 'onReady new BrowserWindow'
@@ -706,6 +706,15 @@ async function newPage ( options ) {
         createWindowCounter: 0
       }
 
+      // an initial about:blank page is loaded to prime the page
+      // into a reliable state; subsequent page.goto's will always
+      // create a new page and prime it with an about:blank no matter what
+      // in order to have predictable state.
+      const win = await _createWindow( page.options )
+      page.createWindowCounter++
+      page.win = win
+      _wrapDevTools( page )
+
       _pages._ids = ( _pages._ids || 1 )
       page.id = _pages._ids++
 
@@ -714,8 +723,32 @@ async function newPage ( options ) {
 
       clearTimeout( _timeout )
 
-      log( 1, 'resolving page' )
-      resolve( page )
+      log( 1, 'prime:win:session' )
+      const session = win.webContents.session
+
+      log( 1, 'prime:win:userAgent' )
+      if ( page.options.userAgent ) {
+        session.setUserAgent( page.options.userAgent )
+      } else {
+        session.setUserAgent( DEFAULT_USERAGENT )
+      }
+
+      log( 1, 'prime:win:devtools' )
+      if ( page.options.devtools || _envs.debug || _envs.devtools ) {
+        win.openDevTools()
+      }
+
+      win.once( 'ready-to-show', function page_readyToShow () {
+        log( 1, 'prime:win:ready-to-show' )
+
+        if ( page.options.show || _envs.show ) {
+          win.show()
+          app.dock && app.dock.show && app.dock.show()
+        }
+
+        log( 1, 'resolving page' )
+        resolve( page )
+      } )
     }
   } )
 }
