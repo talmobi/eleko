@@ -524,12 +524,10 @@ function launch ( launchOptions )
   } )
 }
 
-function setUserAgent ( mainWindow )
+function setUserAgent ( mainWindow, userAgent )
 {
   const session = mainWindow.webContents.session
-
-  // set user-agent lowest compatible
-  session.setUserAgent( 'Mozilla/5.0 (https://github.com/talmobi/eleko)' )
+  session.setUserAgent( userAgent )
 }
 
 function getUserAgent ( mainWindow )
