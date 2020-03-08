@@ -23,6 +23,8 @@ Object.keys( process.env ).forEach(
 const _pages = {}
 const _browsers = []
 
+const DEFAULT_USERAGENT = 'Mozilla/5.0 (https://github.com/talmobi/eleko)'
+
 const verbosity = (
   _envs.debug ? 10 : Number( _envs.verbose ) || 0
 )
