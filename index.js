@@ -721,7 +721,7 @@ async function newPage ( options ) {
   } )
 }
 
-function _createWindow ( options, noblank ) {
+function _createWindow ( options ) {
   log( 1, '_createWindow' )
   const opts = Object.assign( {}, options )
 
@@ -747,27 +747,22 @@ function _createWindow ( options, noblank ) {
 
     const win = new BrowserWindow( opts )
 
-    if ( !noblank ) {
-      win.webContents.once( 'dom-ready', function _createWindow_domReady () {
-        log( 1, '_createWindow:dom-ready' )
-        // resolve( win )
-        resolve( win )
-      } )
-
-      // do not attach ready-to-show listener at it will not
-      // trigger again when we want it to after we load an
-      // actual url other than about:blank
-
-      log( 1, '_createWindow:blank' )
-      // we want to load a blank page in order to enter a clean
-      // state -- trying to access/work with an unlaoded window
-      // leads to unpredictable behaviour ( e.g. page evaluate
-      // hangs )
-      await win.loadURL( 'about:blank' )
-    } else {
-      log( 1, '_createWindow:resolve' )
+    win.webContents.once( 'dom-ready', function _createWindow_domReady () {
+      log( 1, '_createWindow:dom-ready' )
+      // resolve( win )
       resolve( win )
-    }
+    } )
+
+    // do not attach ready-to-show listener at it will not
+    // trigger again when we want it to after we load an
+    // actual url other than about:blank
+
+    log( 1, '_createWindow:blank' )
+    // we want to load a blank page in order to enter a clean
+    // state -- trying to access/work with an unlaoded window
+    // leads to unpredictable behaviour ( e.g. page evaluate
+    // hangs )
+    await win.loadURL( 'about:blank' )
   } )
 }
 
