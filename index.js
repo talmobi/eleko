@@ -640,8 +640,6 @@ async function newPage ( options ) {
   // inside electro context spawn BrowserWindow wrapper
   // with custom page.goto function that replaces the underlying
   // window
-  // TODO 
-
   options = options || {}
 
   const electron = require( 'electron' )
