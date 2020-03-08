@@ -915,7 +915,7 @@ function _attachPageMethods ( page ) {
         const winSize = oldWin.getSize()
         const winPosition = oldWin.getPosition()
 
-        console.log( 'wasDevToolsOpened: ' + wasDevToolsOpened )
+        log( 1, '_attachGoto:second:wasDevToolsOpened: ' + wasDevToolsOpened )
 
         const newWin = await _createWindow( page.options )
         page.createWindowCounter++
