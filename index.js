@@ -906,6 +906,10 @@ function _wrapDevTools ( page ) {
     page.devtools ? closeDevTools() : openDevTools()
   }
 
+  page.openDevTools = openDevTools
+  page.closeDevTools = closeDevTools
+  page.toggleDevTools = toggleDevTools
+
   win.openDevTools = openDevTools
   win.closeDevTools = closeDevTools
   win.toggleDevTools = toggleDevTools
