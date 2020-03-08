@@ -7,7 +7,7 @@ async function main () {
     const browser = await eleko.launch()
     const page = await browser.newPage()
 
-    tick()
+    // tick()
     async function tick () {
       console.log( ' == tick == ' )
 
@@ -25,11 +25,7 @@ async function main () {
       setTimeout( tick, 1000 )
     }
 
-    console.log( page )
-
     await page.goto( 'https://youtube.com' )
-
-    await page.waitFor( 1000 * 10 )
 
     page.onrequest = function ( req ) {
       const url = req.url
@@ -38,6 +34,8 @@ async function main () {
       if ( url.indexOf( 'font' ) >= 0 ) return req.abort()
       req.continue()
     }
+
+    await page.waitFor( 1000 * 1000 )
 
     await page.goto( 'about:blank' )
 
