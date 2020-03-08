@@ -63,7 +63,8 @@ test( 'launch', async function ( t ) {
   _page = page
 
   // set user-agent lowest compatible
-  const userAgent = 'Mozilla/5.0 (https://github.com/talmobi/eleko)'
+  const now = Date.now()
+  const userAgent = 'Mozilla/5.0 ( ' + now + ' )'
   console.log( 'setUserAgent..' )
   await page.setUserAgent( userAgent )
   console.log( 'setUserAgent' )
