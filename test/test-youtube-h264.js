@@ -11,7 +11,7 @@ test( 'play youtube video', async function ( t ) {
   t.plan( 3 )
 
   const browser = await eleko.launch()
-  const page = await browser.newPage( { show: false } )
+  const page = await browser.newPage()
 
   page.on( 'request', function ( req ) {
     const url = req.url
