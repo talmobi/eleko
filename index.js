@@ -818,6 +818,8 @@ function _attachPageMethods ( page ) {
     log( 1, 'page.goto called' )
 
     return new Promise( async function ( resolve, reject ) {
+      // since page.win is primed to a clean about:blank state
+      // on every newPage this will not be used often or ever?
       if ( page.win == null ) {
         log( 1, '_attachGoto:first' )
 
