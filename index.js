@@ -885,6 +885,32 @@ function _attachPageMethods ( page ) {
   log( 1, '_attachGoto:returning' )
 }
 
+function _wrapDevTools ( page ) {
+  const win = page.win
+
+  win._openDevTools = win.openDevTools
+  win._closeDevTools = win.closeDevTools
+  win._toggleDevTools = win.toggleDevTools
+
+  function openDevTools () {
+    page.devtools = true
+    win._openDevTools()
+  }
+
+  function closeDevTools () {
+    page.devtools = false
+    win._closeDevTools()
+  }
+
+  function toggleDevTools () {
+    page.devtools ? closeDevTools() : openDevTools()
+  }
+
+  win.openDevTools = openDevTools
+  win.closeDevTools = closeDevTools
+  win.toggleDevTools = toggleDevTools
+}
+
 function goto ( mainWindow, url ) {
   // DEPRECATED: use newPage api with page.goto instead
   // ex: page = await newPage()
