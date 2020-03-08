@@ -87,6 +87,19 @@ test( 'goto local index.html', async function ( t ) {
   t.equal( title, 'Adorable baby giraffes', 'goto local index.html' )
 } )
 
+test( 'userAgent remains after goto', async function ( t ) {
+  // goto local index.html
+  t.plan( 1 )
+  const port = server.address().port
+  const url = `http://127.0.0.1:${ port }/index.html`
+  console.log( 'url: ' + url )
+
+  const ua = await _page.getUserAgent()
+  await _page.goto( url )
+
+  t.equal( ua, await _page.getUserAgent(), 'user agent remained after goto OK' )
+} )
+
 test( 'evaluate title with string args', async function ( t ) {
   // evaluate title with string args
   t.plan( 1 )
