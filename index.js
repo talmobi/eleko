@@ -637,7 +637,7 @@ function waitFor ( mainWindow, query, ...args )
 }
 
 async function newPage ( options ) {
-  // inside electro context spawn BrowserWindow wrapper
+  // inside electron context spawn BrowserWindow wrapper
   // with custom page.goto function that replaces the underlying
   // window
   options = options || {}
