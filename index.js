@@ -771,129 +771,118 @@ function _createWindow ( options, noblank ) {
   } )
 }
 
-        log( 1, 'newPage:define goto' )
-        page.goto = async function page_goto ( url ) {
-          // create a new page and replace the underlying window
-          // with the new one
+function _attachPageMethods ( page ) {
+  log( 1, '_attachPageMethods' )
 
-          log( 1, ' === page.goto === ' )
-          log( 1, 'url: ' + url )
+  const electron = require( 'electron' )
 
-          if ( page._pending_goto_callback ) {
-            page._pending_goto_callback( 'error: replaced with newer page.goto call' )
-            delete page._reject_pending_goto
+  if ( typeof electron === 'string' ) {
+    throw new Error(`
+      Error: trying to launch outide of electron context.
+      You need to run with the electron binary instead of node.
+        ex. 'electron main.js'
+        ex. 'node_modules/.bin/electron main.js'
+    `)
+  }
+
+  const app = electron.app
+
+  page.goto = function page_goto ( url ) {
+    log( 1, 'page.goto called' )
+
+    return new Promise( async function ( resolve, reject ) {
+      if ( page.win == null ) {
+        log( 1, '_attachGoto:first' )
+
+        // first goto on the page wrapper ( no BrowserWindow
+        // created yet )
+        const win = await _createWindow( page.options )
+        page.createWindowCounter++
+        page.win = win
+        _wrapDevTools( page )
+
+        log( 1, '_attachGoto:first:session' )
+        const session = win.webContents.session
+
+        log( 1, '_attachGoto:first:userAgent' )
+        if ( page.options.userAgent ) {
+          session.setUserAgent( page.options.userAgent )
+        } else {
+          session.setUserAgent( DEFAULT_USERAGENT )
+        }
+
+        log( 1, '_attachGoto:first:loadURL' )
+        await win.loadURL( url )
+
+        log( 1, '_attachGoto:first:devtools' )
+        if ( page.options.devtools || _envs.debug || _envs.devtools ) {
+          win.openDevTools()
+        }
+
+        win.once( 'ready-to-show', function page_readyToShow () {
+          log( 1, '_attachGoto:first:ready-to-show' )
+
+          if ( page.options.show || _envs.show ) {
+            win.show()
+            app.dock && app.dock.show && app.dock.show()
           }
-
-          return new Promise( async function ( resolve, reject ) {
-            log( 1, ' === page.goto:new Promise === ' )
-
-            function callback ( err ) {
-              if ( callback.done ) return
-              callback.done = true
-
-              if ( err ) return reject( err )
-              resolve()
-            }
-            page._pending_goto_callback = callback
-
-            const mainWindow = page.win // current window (soon replaced)
-
-            const session = mainWindow.webContents.session
-            const userAgent = session.getUserAgent()
-            log( 1, ' === page.goto:got userAgent === ' )
-
-            const _onrequest = mainWindow._eleko_onrequest
-            if ( _onrequest ) {
-              session.webRequest.onBeforeRequest( function ( details, callback ) {
-                return callback( { cancel: true } )
-              } )
-            }
-            log( 1, ' === page.goto:onBeforeRequest cancel all === ' )
-
-            const isDevToolsOpen = mainWindow.webContents.isDevToolsOpened()
-            log( 1, ' === page.goto:isDevToolsOpen: ' + isDevToolsOpen )
-
-            const isVisible = mainWindow.isVisible()
-            log( 1, ' === page.goto:isVisible: ' + isVisible )
-
-            log( 1, ' === page.goto:newPage === ' )
-            const _newPage = await newPage( options )
-
-            log( 1, ' === page.goto:destroy === ' )
-            mainWindow.destroy() // destroy the old window
-            page.win = _newPage.win // use the new window
-            page._id = _newPage._id
-
-            log( 1, ' === page.goto:newPage.id: ' + _newPage.id )
-            delete _pages[ _newPage.id ] // delete the global ref
-
-            if ( isDevToolsOpen ) {
-              page.win.webContents.openDevTools()
-            } else {
-              page.win.webContents.closeDevTools()
-            }
-            log( 1, ' === page.goto:set DevTools === ' )
-
-            if ( isVisible ) {
-              page.win.show()
-              // show dock icon if showing window
-              app.dock && app.dock.show && app.dock.show()
-            } else {
-              page.win.hide()
-            }
-            log( 1, ' === page.goto:set visibility === ' )
-
-            if ( userAgent ) {
-              const session = page.win.webContents.session
-              session.setUserAgent( userAgent )
-              log( 1, ' === page.goto:set userAgent === ' )
-            }
-
-            // transfer request listener over to new window
-            if ( _onrequest ) {
-              onrequest( page.win, _onrequest )
-              log( 1, ' === page.goto:set onrequest === ' )
-            }
-
-            log( 1, ' === page.goto:loadURL === ' )
-            page.win.webContents.loadURL( url )
-            // TODO add timeout?
-
-            page.win.webContents.once( 'dom-ready', function () {
-              log( 1, ' === page.goto:dom-ready === ' )
-              log( 1, ' === page.goto:done === ' )
-
-              delete page._pending_goto_callback
-              callback( undefined )
-            } )
-          } )
-        }
-
-        if ( _envs.debug || _envs.devtools ) {
-          mainWindow.webContents.openDevTools()
-        }
-
-        if ( options.show ) {
-          mainWindow.show()
-          // show dock icon if showing window
-          app.dock && app.dock.show && app.dock.show()
-        }
-
-        mainWindow.webContents.on( 'new-window', function ( e, url ) {
-          // prevent popups by default
-          e.preventDefault()
-          log( 1, 'popup prevented: ' + url.slice( 0, 35 ) )
         } )
 
-        log( 1, 'newPage:await about:blank' )
-        await mainWindow.webContents.loadURL( 'about:blank' )
-        log( 1, 'newPage:done about:blank' )
+        win.webContents.once( 'dom-ready', function page_domReady () {
+          log( 1, '_attachGoto:first:dom-ready' )
+          resolve()
+        } )
+      } else {
+        log( 1, '_attachGoto:second' )
 
-        clearTimeout( _timeout )
-        resolve( page )
+        // second goto, an old BrowserWindow already exists
+        const oldWin = page.win
+        const oldSession = page.win.webContents.session
+
+        const wasVisible = oldWin.isVisible()
+        const wasDevToolsOpened = page.devtools || oldWin.isDevToolsOpened()
+        const userAgent = oldSession.getUserAgent()
+
+        console.log( 'wasDevToolsOpened: ' + wasDevToolsOpened )
+
+        const newWin = await _createWindow( page.options )
+        page.createWindowCounter++
+        // save the new window and destroy the oldwindow when
+        // ready-to-show is triggered
+        page.win = newWin
+        _wrapDevTools( page )
+
+        const newSession = newWin.webContents.session
+        newSession.setUserAgent( userAgent )
+
+        log( 1, '_attachGoto:second:loadURL' )
+        await newWin.loadURL( url )
+
+        log( 1, '_attachGoto:second:devtools' )
+        if ( wasDevToolsOpened ) {
+          newWin.openDevTools()
+        }
+
+        newWin.once( 'ready-to-show', function newpage_readyToShow () {
+          log( 1, '_attachGoto:second:ready-to-show' )
+
+          if ( wasVisible ) {
+            newWin.show()
+            app.dock && app.dock.show && app.dock.show()
+          }
+
+          oldWin.destroy()
+        } )
+
+        newWin.webContents.once( 'dom-ready', function newpage_domReady () {
+          log( 1, '_attachGoto:second:dom-ready' )
+          resolve()
+        } )
       }
-    }
-  } )
+    } )
+  }
+
+  log( 1, '_attachGoto:returning' )
 }
 
 function goto ( mainWindow, url ) {
