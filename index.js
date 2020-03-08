@@ -171,20 +171,25 @@ function launch ( launchOptions )
                 return p.resolve( data )
               }
 
-              if ( page.onrequest ) {
-                const req = details
-                req.abort = function () {
-                  log( 2, 'abort' )
-                  callback( undefined, true )
-                }
-                req.continue = function () {
-                 log( 2, 'continue' )
-                  callback( undefined, false )
-                }
+              const req = details
+              req.abort = function () {
+                log( 2, 'onrequest:abort' )
+                callback( undefined, true )
+              }
+              req.continue = function () {
+                log( 2, 'onrequest:continue' )
+                callback( undefined, false )
+              }
 
+              if ( page.onrequest ) {
                 return page.onrequest( req )
               } else {
-                return p.resolve()
+                return req.continue()
+              }
+            }
+          }
+          break
+
               }
             }
           }
