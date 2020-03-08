@@ -708,7 +708,6 @@ async function newPage ( options ) {
 
       _pages._ids = ( _pages._ids || 1 )
       page.id = _pages._ids++
-      page._id = page.id
 
       log( 1, 'attaching page.goto' )
       _attachPageMethods( page )
