@@ -692,11 +692,11 @@ async function newPage ( options ) {
       _status = 'onReady new BrowserWindow'
 
       // merge options with defaults
-      const opts = Object.assign(
-        getDefaultOptions(), options || {}
+      const mergedOptions = Object.assign(
+        getDefaultOptions(), options
       )
 
-      opts.webPreferences = Object.assign(
+      mergedOptions.webPreferences = Object.assign(
         getDefaultOptions().webPreferences, options.webPreferences || {}
       )
 
