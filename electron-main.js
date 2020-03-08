@@ -179,6 +179,8 @@ ipc.on( 'promise:page:goto', async function ( req ) {
   const page = _pages[ req.data.id ]
   const url = req.data.url
 
+  attachInitialOnBeforeRequestHandler( page )
+
   log( 1, 'page:' )
   log( 1, page )
 
@@ -336,6 +338,10 @@ app.on( 'activate', function () {
 })
 
 function attachInitialOnBeforeRequestHandler ( page ) {
+  if ( !page.win ) return
+  if ( page.win._attachInitialOnBeforeRequestHandler ) return
+  page.win._attachInitialOnBeforeRequestHandler = true
+
   const mainWindow = page.win
   const session = mainWindow.webContents.session
 
