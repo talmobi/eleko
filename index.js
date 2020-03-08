@@ -190,6 +190,36 @@ function launch ( launchOptions )
           }
           break
 
+        case 'page:will-navigate':
+          {
+            const pageId = data.pageId
+            const details = data.details
+
+            const page = browser._pages[ pageId ]
+            if ( page && page.status === 'OK' ) {
+              function callback ( err, data ) {
+                if ( callback.done ) return
+                callback.done = true
+
+                log( 1, 'page:will-navigate:callback' )
+                if ( err ) return p.reject( err )
+                return p.resolve( data )
+              }
+
+              const req = details
+              req.abort = function () {
+                log( 1, 'will-navigate:abort' )
+                callback( undefined, true )
+              }
+              req.continue = function () {
+                log( 1, 'will-navigate:continue' )
+                callback( undefined, false )
+              }
+
+              if ( page.onwillnavigate ) {
+                return page.onwillnavigate( req )
+              } else {
+                return req.continue()
               }
             }
           }
