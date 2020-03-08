@@ -101,7 +101,7 @@ function getDefaultOptions ()
 
 function launch ( launchOptions )
 {
-  const _nz = nozombie()
+  const nz = nozombie()
 
   return new Promise( function ( browserResolve, browserReject ) {
     // path to electron executable in node context
@@ -128,7 +128,7 @@ function launch ( launchOptions )
 
     const _env = Object.assign( {}, process.env, { launched_with_eleko: true } )
     const spawn = _childProcess.spawn( _electron, [ filepath ], { stdio: 'pipe', shell: false, env: _env } )
-    _nz.add( spawn.pid )
+    nz.add( spawn.pid )
     browser.spawn = spawn
 
     const ipc = stdioipc.create( spawn.stdout, spawn.stdin )
@@ -471,7 +471,6 @@ function launch ( launchOptions )
       } )
     }
 
-
     browser.close = function browser_close () {
       log( 1, 'api.browser.close' )
 
@@ -482,7 +481,7 @@ function launch ( launchOptions )
       return browser._close_promise = new Promise ( async function ( resolve, reject ) {
         const _force_kill_timeout = setTimeout( function () {
           // force kill
-          _nz.kill()
+          nz.kill()
         }, 1000 * 10 )
 
         browser._close_callback = function ( err, val ) {
@@ -508,7 +507,10 @@ function launch ( launchOptions )
     spawn.on( 'close', function ( code ) {
       clearTimeout( _heartbeatTimeout )
       log( 1, 'electron spawn exited, code: ' + code )
-      _nz.kill()
+
+      setTimeout( function () {
+        nz.kill()
+      }, 0 )
 
       browser.emit( 'exit', code )
       browser.emit( 'close', code )
