@@ -872,10 +872,18 @@ function _attachPageMethods ( page ) {
         const wasDevToolsOpened = page.devtools || oldWin.isDevToolsOpened()
         const userAgent = oldSession.getUserAgent()
 
+        const winSize = oldWin.getSize()
+        const winPosition = oldWin.getPosition()
+
         console.log( 'wasDevToolsOpened: ' + wasDevToolsOpened )
 
         const newWin = await _createWindow( page.options )
         page.createWindowCounter++
+
+        // restore position and size
+        newWin.setSize( winSize[ 0 ], winSize[ 1 ] )
+        newWin.setPosition( winPosition[ 0 ], winPosition[ 1 ] )
+
         // save the new window and destroy the oldwindow when
         // ready-to-show is triggered
         page.win = newWin
