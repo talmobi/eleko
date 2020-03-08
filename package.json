@@ -4,6 +4,7 @@
   "description": "electron helper fns",
   "main": "index.js",
   "files": [
+    "stdio-ipc.js",
     "index.js",
     "electron-main.js"
   ],
