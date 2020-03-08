@@ -166,6 +166,7 @@ ipc.on( 'promise:newPage', async function ( req ) {
   _pages[ page.id ] = page
 
   attachInitialOnBeforeRequestHandler( page )
+  attachInitialWillNavigateHandler( page )
 
   req.callback( undefined, page.id )
   log( 1, 'new page created' )
@@ -180,6 +181,7 @@ ipc.on( 'promise:page:goto', async function ( req ) {
   const url = req.data.url
 
   attachInitialOnBeforeRequestHandler( page )
+  attachInitialWillNavigateHandler( page )
 
   log( 1, 'page:' )
   log( 1, page )
@@ -379,6 +381,48 @@ function attachInitialOnBeforeRequestHandler ( page ) {
         callback( { cancel: true } ) // block
       } else {
         callback( { cancel: false } ) // let through
+      }
+    }
+  )
+}
+
+function attachInitialWillNavigateHandler ( page ) {
+  if ( !page.win ) return
+  if ( page.win._attachInitialWillNavigateHandler ) return
+  page.win._attachInitialWillNavigateHandler = true
+
+  const mainWindow = page.win
+  const session = mainWindow.webContents.session
+
+  // attach request handler
+  mainWindow.webContents.on(
+    'will-navigate',
+    async function ( evt, url ) {
+      // prevent navigation by default
+      evt.preventDefault()
+
+      // but inform page api in case they want to take action
+      log( 1, 'will-navigate: ' + url.slice( 0, 45 ) )
+
+      const shouldBlock = await ipc.promise( {
+        type: 'page:will-navigate',
+        pageId: page.id,
+        url: url
+      } )
+
+      log( 1, 'will-navigate: shouldBlock: ' + shouldBlock )
+
+      if ( shouldBlock ) {
+        log( 1, ' (x) navigation blocked: ' + url.slice( 0, 45 ) )
+      } else {
+        if ( page.win === mainWindow ) {
+          log( 1, ' (o) navigating to: ' + url.slice( 0, 45 ) )
+          eleko.evaluate( mainWindow, function ( url ) {
+            document.location.href = url
+          }, url )
+        } else {
+          log( 1, ' (-) navigation failed, window changed: ' + url.slice( 0, 45 ) )
+        }
       }
     }
   )
