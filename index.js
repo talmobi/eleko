@@ -909,6 +909,7 @@ function _attachPageMethods ( page ) {
         const oldSession = page.win.webContents.session
 
         const wasVisible = oldWin.isVisible()
+        const wasFocused = oldWin.isFocused()
         const wasDevToolsOpened = page.devtools || oldWin.isDevToolsOpened()
         const userAgent = oldSession.getUserAgent()
 
@@ -944,7 +945,11 @@ function _attachPageMethods ( page ) {
           log( 1, '_attachGoto:second:ready-to-show' )
 
           if ( wasVisible ) {
-            newWin.show()
+            if ( wasFocused ) {
+              newWin.show()
+            } else {
+              newWin.showInactive()
+            }
             app.dock && app.dock.show && app.dock.show()
           }
 
