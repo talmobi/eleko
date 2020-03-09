@@ -105,6 +105,8 @@ function launch ( launchOptions )
 {
   const nz = nozombie()
 
+  launchOptions = launchOptions || {}
+
   return new Promise( function ( browserResolve, browserReject ) {
     // path to electron executable in node context
     const _electron = require( 'electron' )
@@ -129,6 +131,9 @@ function launch ( launchOptions )
     browser._pages = {}
 
     const _env = Object.assign( {}, process.env, { launched_with_eleko: true } )
+
+    if ( launchOptions.headless ) _env.headless = 1
+
     const spawn = _childProcess.spawn( _electron, [ filepath ], { stdio: 'pipe', shell: false, env: _env } )
     nz.add( spawn.pid )
     browser.spawn = spawn

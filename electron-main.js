@@ -6,6 +6,17 @@ const electron = require( 'electron' )
 const fs = require( 'fs' )
 const path = require( 'path' )
 
+const _envs = {}
+Object.keys( process.env ).forEach(
+  function ( key ) {
+    const n = process.env[ key ]
+    if ( n == '0' || n == 'false' || !n ) {
+      return _envs[ key ] = false
+    }
+    _envs[ key ] = n
+  }
+)
+
 // Module to control application life
 const app = electron.app
 
@@ -23,10 +34,13 @@ process.on( 'uncaughtException', function ( error ) {
   process.exit( 1 )
 } )
 
-app.disableHardwareAcceleration()
+if ( _envs.headless ) {
+  app.disableHardwareAcceleration()
 
-// app.commandLine.appendSwitch( 'use-gl', 'swiftshader' )
-// app.commandLine.appendSwitch( 'ignore-gpu-blacklist' )
+  app.commandLine.appendSwitch( 'use-gl', 'swiftshader' )
+  app.commandLine.appendSwitch( 'ignore-gpu-blacklist' )
+}
+
 
 // hide dock icon by default
 app.dock && app.dock.hide && app.dock.hide()
@@ -62,17 +76,6 @@ function createNamedFunction ( pf ) {
   )
   return fn()
 }
-
-const _envs = {}
-Object.keys( process.env ).forEach(
-  function ( key ) {
-    const n = process.env[ key ]
-    if ( n == '0' || n == 'false' || !n ) {
-      return _envs[ key ] = false
-    }
-    _envs[ key ] = n
-  }
-)
 
 const verbosity = (
   _envs.debug ? 10 : Number( _envs.verbose ) || 0

@@ -57,8 +57,8 @@ app.allowRendererProcessReuse = true
 
 app.disableHardwareAcceleration()
 
-// app.commandLine.appendSwitch( 'use-gl', 'swiftshader' )
-// app.commandLine.appendSwitch( 'ignore-gpu-blacklist' )
+app.commandLine.appendSwitch( 'use-gl', 'swiftshader' )
+app.commandLine.appendSwitch( 'ignore-gpu-blacklist' )
 
 // hide dock icon by default
 app.dock && app.dock.hide && app.dock.hide()
