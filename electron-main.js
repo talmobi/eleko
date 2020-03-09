@@ -206,7 +206,7 @@ ipc.on( 'promise:page:close', async function ( req ) {
 
   try {
     log( 1, 'promise:page:close:waiting' )
-    await page.win.destroy()
+    await page.close()
     log( 1, 'promise:page:close:done' )
     req.callback( undefined )
   } catch ( err ) {

@@ -861,6 +861,8 @@ function _attachPageMethods ( page ) {
     log( 1, 'page.goto called' )
 
     return new Promise( async function ( resolve, reject ) {
+      if ( page._closed ) return reject( 'error: page has been closed.' )
+
       // since page.win is primed to a clean about:blank state
       // on every newPage this will not be used often or ever?
       if ( page.win == null ) {
@@ -964,6 +966,17 @@ function _attachPageMethods ( page ) {
           resolve()
         } )
       }
+    } )
+  }
+
+  page.close = function page_close () {
+    log( 1, 'page.close called' )
+    page._closed = true
+
+    return new Promise( function ( resolve, reject ) {
+      const win = page.win
+      win && win.destroy()
+      delete page.win
     } )
   }
 
