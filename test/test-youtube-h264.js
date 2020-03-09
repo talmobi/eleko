@@ -57,20 +57,32 @@ test( 'play youtube video', async function ( t ) {
 
   await new Promise( function ( r ) { setTimeout( r, 2000 ) } )
 
-  const time = await page.evaluate( function () {
-    const video = document.querySelector( 'video' )
-    return {
-      currentTime: video.currentTime,
-      duration: video.duration
+  checkTime()
+  async function checkTime () {
+    const time = await page.evaluate( function () {
+      const video = document.querySelector( 'video' )
+      return {
+        currentTime: video.currentTime,
+        duration: video.duration
+      }
+    } )
+
+    console.log( time )
+
+    if ( time.currentTime > 1 ) {
+      finish( time )
+    } else {
+      setTimeout( checkTime, 1000 )
     }
-  } )
+  }
 
-  console.log( time )
-  t.ok( time.currentTime > 1, 'currentTime ok' )
-  t.equal( time.duration | 0, 1051, 'duration ok' )
+  async function finish ( time ) {
+    t.ok( time.currentTime > 1, 'currentTime ok' )
+    t.equal( time.duration | 0, 1051, 'duration ok' )
 
-  await browser.close()
-  t.pass( 'browser closed' )
+    await browser.close()
+    t.pass( 'browser closed' )
+  }
 } )
 
 test.onFinish( function () {
