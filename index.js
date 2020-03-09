@@ -752,9 +752,11 @@ async function newPage ( options ) {
       page.createWindowCounter++
       page.win = win
       _wrapDevTools( page )
+      _wrapShowHide( page )
 
       _pages._ids = ( _pages._ids || 1 )
       page.id = _pages._ids++
+      _pages[ page.id ] = page
 
       log( 1, 'attaching page.goto' )
       _attachPageMethods( page )
@@ -781,7 +783,6 @@ async function newPage ( options ) {
 
         if ( page.options.show || _envs.show ) {
           win.show()
-          app.dock && app.dock.show && app.dock.show()
         }
 
         log( 1, 'resolving page' )
@@ -874,6 +875,7 @@ function _attachPageMethods ( page ) {
         page.createWindowCounter++
         page.win = win
         _wrapDevTools( page )
+        _wrapShowHide( page )
 
         log( 1, '_attachGoto:first:session' )
         const session = win.webContents.session
@@ -898,7 +900,6 @@ function _attachPageMethods ( page ) {
 
           if ( page.options.show || _envs.show ) {
             win.show()
-            app.dock && app.dock.show && app.dock.show()
           }
         } )
 
@@ -934,6 +935,7 @@ function _attachPageMethods ( page ) {
         // ready-to-show is triggered
         page.win = newWin
         _wrapDevTools( page )
+        _wrapShowHide( page )
 
         const newSession = newWin.webContents.session
         newSession.setUserAgent( userAgent )
@@ -955,7 +957,6 @@ function _attachPageMethods ( page ) {
             } else {
               newWin.showInactive()
             }
-            app.dock && app.dock.show && app.dock.show()
           }
 
           oldWin.destroy()
@@ -981,6 +982,31 @@ function _attachPageMethods ( page ) {
   }
 
   log( 1, '_attachGoto:returning' )
+}
+
+function _updateDock () {
+  clearTimeout( _updateDock.timeout )
+  _updateDock.timeout = setTimeout( function () {
+    const electron = require( 'electron' )
+    const app = electron.app
+
+    if ( app.dock && app.dock.show && app.dock.hide ) {
+      const pages = Object.keys( _pages )
+
+      // find any page that is visible
+      for ( let i = 0; i < pages.length; i++ ) {
+        const pageId = pages[ i ]
+        const page = _pages[ pageId ]
+        if ( !page._closed && page._visible ) {
+          // show and stop looking
+          return app.dock.show()
+        }
+      }
+
+      // if no pages were visible then hide the dock
+      app.dock.hide()
+    }
+  }, 66 )
 }
 
 function _wrapDevTools ( page ) {
@@ -1011,6 +1037,40 @@ function _wrapDevTools ( page ) {
   win.openDevTools = openDevTools
   win.closeDevTools = closeDevTools
   win.toggleDevTools = toggleDevTools
+}
+
+function _wrapShowHide ( page ) {
+  const win = page.win
+
+  win._show = win.show
+  win._showInactive = win.showInactive
+  win._hide = win.hide
+
+  function show () {
+    page._visible = true
+    win._show()
+    _updateDock()
+  }
+
+  function showInactive () {
+    page._visible = true
+    win._showInactive()
+    _updateDock()
+  }
+
+  function hide () {
+    page._visible = false
+    win._hide()
+    _updateDock()
+  }
+
+  page.show = show
+  page.showInactive = showInactive
+  page.hide = hide
+
+  win.show = show
+  win.showInactive = showInactive
+  win.hide = hide
 }
 
 function goto ( mainWindow, url ) {
