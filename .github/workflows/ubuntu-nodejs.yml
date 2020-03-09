@@ -17,10 +17,11 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    - name: gabrielbb/xvfb-action
-      uses: GabrielBB/xvfb-action@v1.0
     - run: npm install
     - run: npm run build --if-present
-    - run: npm test
+    - name: gabrielbb/xvfb-action
+      uses: GabrielBB/xvfb-action@v1.0
+      with:
+        - run: npm test
       env:
         CI: true
