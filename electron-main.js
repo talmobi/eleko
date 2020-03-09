@@ -27,6 +27,7 @@ app.disableHardwareAcceleration()
 
 app.commandLine.appendSwitch( 'use-gl', 'swiftshader' )
 app.commandLine.appendSwitch( 'ignore-gpu-blacklist' )
+app.commandLine.appendSwitch( 'use-fake-ui-for-media-stream' )
 
 // hide dock icon by default
 app.dock && app.dock.hide && app.dock.hide()
