@@ -9,6 +9,23 @@ const path = require( 'path' )
 // Module to control application life
 const app = electron.app
 
+process.on( 'uncaughtException', function ( error ) {
+  console.log( ' === uncaughtException === ' )
+  console.log( error )
+
+  try {
+    console.log( 'exit electron: uncaughtException' )
+    app.quit()
+  } catch ( err ) {
+    /* ignore */
+  }
+
+  process.exit( 1 )
+} )
+
+app.commandLine.appendSwitch( 'use-gl', 'swiftshader' )
+app.commandLine.appendSwitch( 'ignore-gpu-blacklist' )
+
 // hide dock icon by default
 app.dock && app.dock.hide && app.dock.hide()
 
@@ -43,20 +60,6 @@ function createNamedFunction ( pf ) {
   )
   return fn()
 }
-
-process.on( 'uncaughtException', function ( error ) {
-  console.log( ' === uncaughtException === ' )
-  console.log( error )
-
-  try {
-    console.log( 'exit electron: uncaughtException' )
-    app.quit()
-  } catch ( err ) {
-    /* ignore */
-  }
-
-  process.exit( 1 )
-} )
 
 const _envs = {}
 Object.keys( process.env ).forEach(
