@@ -23,6 +23,8 @@ process.on( 'uncaughtException', function ( error ) {
   process.exit( 1 )
 } )
 
+app.disableHardwareAcceleration()
+
 app.commandLine.appendSwitch( 'use-gl', 'swiftshader' )
 app.commandLine.appendSwitch( 'ignore-gpu-blacklist' )
 
@@ -363,6 +365,8 @@ function attachInitialOnBeforeRequestHandler ( page ) {
         return callback( { cancel: false } )
       }
       if (
+        url.indexOf( 'about' ) !== 0 &&
+        url.indexOf( 'chrome' ) !== 0 &&
         url.indexOf( 'http' ) !== 0 &&
         url.indexOf( 'file' ) !== 0
       ) {
