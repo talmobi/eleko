@@ -18,7 +18,7 @@
     "test:youtube": "node test/test-youtube-play.js",
     "test:node": "node test/test.js",
     "test:electron": "electron test/electron-test.js",
-    "test": "npm-run-all test:electron test:node test:youtube test:av1 test:h264"
+    "test": "headless=1 npm-run-all test:electron test:node test:youtube test:av1 test:h264"
   },
   "keywords": [
     "eleko",
