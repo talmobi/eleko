@@ -18,7 +18,7 @@
     "test:youtube": "node test/test-youtube-play.js",
     "test:node": "node test/test.js",
     "test:electron": "electron test/electron-test.js",
-    "test": "headless=1 npm-run-all test:electron test:node test:youtube test:av1 test:h264"
+    "test": "cross-env headless=1 npm-run-all test:electron test:node test:youtube test:av1 test:h264"
   },
   "keywords": [
     "eleko",
@@ -43,6 +43,7 @@
   },
   "devDependencies": {
     "ad-block-js": "0.0.2",
+    "cross-env": "~7.0.2",
     "electron": "~8.1.0",
     "express": "~4.17.1",
     "get-port": "~5.1.1",
