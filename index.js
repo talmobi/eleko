@@ -916,7 +916,7 @@ function _attachPageMethods ( page ) {
 
         const wasVisible = oldWin.isVisible()
         const wasFocused = oldWin.isFocused()
-        const wasDevToolsOpened = page.devtools || oldWin.isDevToolsOpened()
+        const wasDevToolsOpened = page._devtools || oldWin.isDevToolsOpened()
         const userAgent = oldSession.getUserAgent()
 
         const winSize = oldWin.getSize()
@@ -1017,17 +1017,17 @@ function _wrapDevTools ( page ) {
   win._toggleDevTools = win.toggleDevTools
 
   function openDevTools () {
-    page.devtools = true
+    page._devtools = true
     win._openDevTools()
   }
 
   function closeDevTools () {
-    page.devtools = false
+    page._devtools = false
     win._closeDevTools()
   }
 
   function toggleDevTools () {
-    page.devtools ? closeDevTools() : openDevTools()
+    page._devtools ? closeDevTools() : openDevTools()
   }
 
   page.openDevTools = openDevTools
