@@ -6,6 +6,17 @@ const eeto = require( 'eeto' )
 
 module.exports.create = create
 
+const _ipcPaths = []
+function clean () {
+  for ( let i = 0; i < _ipcPaths.length; i++ ) {
+    const p = _ipcPaths[ i ]
+    rimraf.sync( p )
+  }
+}
+
+process.on( 'close', clean )
+
+
 function create ( stdread, stdwrite ) {
   const api = eeto()
   api.stdread = stdread
