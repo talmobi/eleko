@@ -1,3 +1,7 @@
+const net = require( 'net' )
+const path = require( 'path' )
+const rimraf = require( 'rimraf' )
+
 const eeto = require( 'eeto' )
 
 module.exports.create = create
