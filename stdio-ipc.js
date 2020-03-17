@@ -155,11 +155,22 @@ function listen ( name ) {
   } )
 }
 
+function create ( name ) {
+  const ipcPath = getIPCPath( name )
+  console.log( 'create:name:' + name )
 
-function create ( stdread, stdwrite ) {
   const api = eeto()
-  api.stdread = stdread
-  api.stdwrite = stdwrite
+
+  const server = net.createServer()
+  api._server = server
+  server.listen( ipcPath )
+  server.once( 'connection', function ( socket ) {
+    console.log( 'create:connected' )
+    api.socket = socket
+    api.emit( 'connected' )
+  } )
+  _ipcPaths.push( ipcPath )
+
   api.buffer = ''
 
   api.ids = 1
@@ -168,9 +179,8 @@ function create ( stdread, stdwrite ) {
   api._ready = false
   api._messages = []
 
-  attach()
   function attach () {
-    api.stdread.on( 'data', function api_onData ( chunk ) {
+    api.socket.on( 'data', function api_onData ( chunk ) {
       onData( api, chunk )
     } )
   }
@@ -191,6 +201,11 @@ function create ( stdread, stdwrite ) {
 
   api.once( 'ready', function () {
     api._ready = true
+    drain()
+  } )
+
+  api.once( 'connected', function () {
+    attach()
     drain()
   } )
 
