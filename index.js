@@ -969,7 +969,23 @@ function _attachPageMethods ( page ) {
 
         newWin.webContents.once( 'dom-ready', function newpage_domReady () {
           log( 1, '_attachGoto:second:dom-ready' )
-          resolve()
+
+          let tries = 0
+          async function check () {
+            const title = await page.win.webContents.executeJavaScript(
+              'document.title',
+              true
+            )
+
+            if ( title || tries > 3 ) {
+              resolve()
+            } else {
+              tries++
+              setTimeout( check, 250 * tries )
+            }
+          }
+
+          setTimeout( check, 250 )
         } )
       }
     } )
