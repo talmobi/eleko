@@ -37,7 +37,7 @@ function getIPCPath ( name ) {
 function listen ( name ) {
   return new Promise ( function ( resolve, reject ) {
     const ipcPath = getIPCPath( name )
-    console.log( 'listen:name:' + name )
+    // console.log( 'listen:name:' + name )
 
     const api = eeto()
 
@@ -46,7 +46,7 @@ function listen ( name ) {
       setTimeout( function () {
         const socket = net.connect( ipcPath )
         socket.once( 'connect', function () {
-          console.log( 'listen:connected' )
+          // console.log( 'listen:connected' )
           api.socket = socket
           api.emit( 'connected' )
           resolve( api )
@@ -157,7 +157,7 @@ function listen ( name ) {
 
 function create ( name ) {
   const ipcPath = getIPCPath( name )
-  console.log( 'create:name:' + name )
+  // console.log( 'create:name:' + name )
 
   const api = eeto()
 
@@ -165,7 +165,7 @@ function create ( name ) {
   api._server = server
   server.listen( ipcPath )
   server.once( 'connection', function ( socket ) {
-    console.log( 'create:connected' )
+    // console.log( 'create:connected' )
     api.socket = socket
     api.emit( 'connected' )
   } )
