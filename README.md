@@ -2,6 +2,7 @@
 [![npm](https://img.shields.io/npm/l/eleko.svg?maxAge=3600&style=flat-square)](https://github.com/talmobi/eleko/blob/master/LICENSE)
 ![mac](https://github.com/talmobi/eleko/workflows/mac/badge.svg)
 ![ubuntu](https://github.com/talmobi/eleko/workflows/ubuntu/badge.svg)
+![windows](https://github.com/talmobi/eleko/workflows/windows/badge.svg)
 
 #  eleko
 a few electron helper functions (mimics puppeteer API) usable inside electron context + node context launch function that spawns an electron child process with an easy to use subset of the same helper functions (mimics puppeteer API)
