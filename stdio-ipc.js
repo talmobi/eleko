@@ -285,7 +285,7 @@ function onData ( api, chunk ) {
 
 function send ( api, json ) {
   const jsonString = JSON.stringify( json )
-  api.stdwrite.write( 'stdio-ipc: ' + jsonString  + '\n' )
+  api.socket.write( 'stdio-ipc: ' + jsonString  + '\n' )
 }
 
 function promise ( api, json ) {
@@ -305,7 +305,7 @@ function promise ( api, json ) {
     api.promises[ p.id ] = p
 
     const jsonString = JSON.stringify( evt )
-    api.stdwrite.write( 'stdio-ipc: ' + jsonString  + '\n' )
+    api.socket.write( 'stdio-ipc: ' + jsonString  + '\n' )
   } )
 }
 
