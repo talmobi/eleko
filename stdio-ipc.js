@@ -54,20 +54,29 @@ function listen ( name, ms ) {
     }, ms || 1000 * 5 )
     _timeouts.push( errorTimeout )
 
+    let connected = false
+
     connect()
     function connect () {
+      if ( connected ) return
+
       clearTimeout( connectTimeout )
       connectTimeout = setTimeout( function () {
         const socket = net.connect( ipcPath )
         socket.once( 'connect', function () {
+          connected = true
           clearTimeout( errorTimeout )
           // console.log( 'listen:connected' )
           api.socket = socket
           api.emit( 'connected' )
           resolve( api )
         } )
-        socket.once( 'error', function () {
-          connect()
+
+        socket.on( 'close', function ( hadError ) {
+          if ( hadError && !connected ) {
+            // try again to establish first connection
+            connect()
+          }
         } )
       }, 250 )
 
