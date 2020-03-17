@@ -47,14 +47,17 @@ function listen ( name, ms ) {
 
     const api = eeto()
 
+    let connectTimeout
     const errorTimeout = setTimeout( function () {
+      clearTimeout( connectTimeout )
       reject( 'error: listen timed out (make sure to use create on your target process)' )
     }, ms || 1000 * 5 )
     _timeouts.push( errorTimeout )
 
     connect()
     function connect () {
-      const timeout = setTimeout( function () {
+      clearTimeout( connectTimeout )
+      connectTimeout = setTimeout( function () {
         const socket = net.connect( ipcPath )
         socket.once( 'connect', function () {
           clearTimeout( errorTimeout )
@@ -68,7 +71,7 @@ function listen ( name, ms ) {
         } )
       }, 250 )
 
-      _timeouts.push( timeout )
+      _timeouts.push( connectTimeout )
     }
 
     api.buffer = ''
