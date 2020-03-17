@@ -72,8 +72,14 @@ function listen ( name, ms ) {
           resolve( api )
         } )
 
+        let _hadError
+        socket.once( 'error', function ( err ) {
+          _hadError = err
+          // ignore
+        } )
+
         socket.on( 'close', function ( hadError ) {
-          if ( hadError && !connected ) {
+          if ( ( hadError || _hadError ) && !connected ) {
             // try again to establish first connection
             connect()
           }
