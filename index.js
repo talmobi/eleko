@@ -7,7 +7,7 @@ const eeto = require( 'eeto' )
 const nozombie = require( 'nozombie' )
 const pf = require( 'parse-function' )()
 
-const stdioipc = require( './stdio-ipc.js' )
+const stdioipc = require( './socket-ipc.js' )
 
 const _envs = {}
 Object.keys( process.env ).forEach(
@@ -107,7 +107,7 @@ function launch ( launchOptions )
 
   launchOptions = launchOptions || {}
 
-  return new Promise( function ( browserResolve, browserReject ) {
+  return new Promise( async function ( browserResolve, browserReject ) {
     // path to electron executable in node context
     const _electron = require( 'electron' )
 
@@ -138,7 +138,7 @@ function launch ( launchOptions )
     nz.add( spawn.pid )
     browser.spawn = spawn
 
-    const ipc = stdioipc.create( spawn.stdout, spawn.stdin )
+    const ipc = await stdioipc.listen( spawn.pid )
     ipc.emit( 'ready' )
     ipc.on( 'log', function ( log ) {
       if ( browser.silent ) return
@@ -969,7 +969,23 @@ function _attachPageMethods ( page ) {
 
         newWin.webContents.once( 'dom-ready', function newpage_domReady () {
           log( 1, '_attachGoto:second:dom-ready' )
-          resolve()
+
+          let tries = 0
+          async function check () {
+            const title = await page.win.webContents.executeJavaScript(
+              'document.title',
+              true
+            )
+
+            if ( title || tries > 3 ) {
+              resolve()
+            } else {
+              tries++
+              setTimeout( check, 250 * tries )
+            }
+          }
+
+          setTimeout( check, 250 )
         } )
       }
     } )

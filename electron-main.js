@@ -53,7 +53,7 @@ const _pages = {}
 const eleko = require( './index.js' )
 const eeto = require( 'eeto' )
 
-const stdioipc = require( './stdio-ipc.js' )
+const stdioipc = require( './socket-ipc.js' )
 
 // is this needed?
 let _launchOptions = {}
@@ -97,7 +97,7 @@ const _videoId = creedenceId
 // variable
 let _appReady = false
 
-const ipc = stdioipc.create( process.stdin, process.stdout )
+const ipc = stdioipc.create( process.pid )
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
