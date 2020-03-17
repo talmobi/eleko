@@ -85,13 +85,15 @@ a few electron helper functions (mimics puppeteer API) usable inside electron co
 
     app.on( 'ready', main )
 
-    let mainWindow
+    let page
     async function main () {
-      // launch BrowserWindow with eleko.getDefaultOptions()
-      mainWindow = new BrowserWindow( eleko.getDefaultOptions() )
+      page = await eleko.newPage()
+
+      // page.win is an instance of BrowserWindow that is updated
+      // every time page.goto is called.
 
       // block ads using a subset of easylist
-      eleko.onrequest( mainWindow, function ( req ) {
+      eleko.onrequest( page.win, function ( req ) {
           const url = req.url
           const shouldBlock = containsAds( url )
           if ( shouldBlock ) {
@@ -102,13 +104,13 @@ a few electron helper functions (mimics puppeteer API) usable inside electron co
       } )
 
       const url = 'https://www.youtube.com/watch?v=Gu2pVPWGYMQ'
-      await eleko.goto( mainWindow, url )
+      await page.goto( url )
 
       // waitFor string
-      await eleko.waitFor( mainWindow, 'video' )
+      await eleko.waitFor( page.win, 'video' )
 
       // evaluate
-      await eleko.evaluate( mainWindow, function () {
+      await eleko.evaluate( page.win, function () {
         const video = document.querySelector( 'video' )
 
         video.pause()
@@ -118,20 +120,20 @@ a few electron helper functions (mimics puppeteer API) usable inside electron co
       } )
 
       // get title
-      const title = await eleko.evaluate( mainWindow, function () {
+      const title = await eleko.evaluate( page.win, function () {
         return document.title
       } )
       console.log( 'title: ' + title )
 
       // waitFor function
-      await eleko.waitFor( mainWindow, function () {
+      await eleko.waitFor( page.win, function () {
         const el = document.querySelector( 'video' )
         // wait until we can play video
         return el && el.readyState === 4 // HAVE_ENOUGH_DATA
       } )
 
       // evaluate with args ( play video )
-      await eleko.evaluate( mainWindow, function ( selector, data ) {
+      await eleko.evaluate( page.win, function ( selector, data ) {
         const el = document.querySelector( selector )
 
         // call the original play function
@@ -141,7 +143,7 @@ a few electron helper functions (mimics puppeteer API) usable inside electron co
       // print video duration periodically
       tick()
       async function tick () {
-        const time = await eleko.evaluate( mainWindow, function () {
+        const time = await eleko.evaluate( page.win, function () {
           const video = document.querySelector( 'video' )
           return {
             currentTime: video.currentTime,

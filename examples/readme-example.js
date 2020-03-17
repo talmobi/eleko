@@ -11,9 +11,10 @@ app.on( 'ready', main )
 
 let page
 async function main () {
-  // launch BrowserWindow with eleko.getDefaultOptions()
-
   page = await eleko.newPage()
+
+  // page.win is an instance of BrowserWindow that is updated
+  // every time page.goto is called.
 
   // block ads using a subset of easylist
   eleko.onrequest( page.win, function ( req ) {
