@@ -107,7 +107,7 @@ function launch ( launchOptions )
 
   launchOptions = launchOptions || {}
 
-  return new Promise( function ( browserResolve, browserReject ) {
+  return new Promise( async function ( browserResolve, browserReject ) {
     // path to electron executable in node context
     const _electron = require( 'electron' )
 
@@ -138,7 +138,7 @@ function launch ( launchOptions )
     nz.add( spawn.pid )
     browser.spawn = spawn
 
-    const ipc = stdioipc.create( spawn.stdout, spawn.stdin )
+    const ipc = await stdioipc.listen( spawn.pid )
     ipc.emit( 'ready' )
     ipc.on( 'log', function ( log ) {
       if ( browser.silent ) return
