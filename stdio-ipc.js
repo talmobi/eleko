@@ -8,14 +8,20 @@ module.exports.create = create
 module.exports.listen = listen
 
 const _ipcPaths = []
+const _timeouts = []
 function clean () {
+  for ( let i = 0; i < _timeouts.length; i++ ) {
+    const t = _timeouts[ i ]
+    clearTimeout( t )
+  }
+
   for ( let i = 0; i < _ipcPaths.length; i++ ) {
     const p = _ipcPaths[ i ]
     rimraf.sync( p )
   }
 }
 
-process.on( 'close', clean )
+process.on( 'exit', clean )
 
 // ref: https://nodejs.org/api/net.html#net_identifying_paths_for_ipc_connections
 function getIPCPath ( name ) {
@@ -34,18 +40,24 @@ function getIPCPath ( name ) {
   return ipcPath
 }
 
-function listen ( name ) {
+function listen ( name, ms ) {
   return new Promise ( function ( resolve, reject ) {
     const ipcPath = getIPCPath( name )
     // console.log( 'listen:name:' + name )
 
     const api = eeto()
 
+    const errorTimeout = setTimeout( function () {
+      reject( 'error: listen timed out (make sure to use create on your target process)' )
+    }, ms || 1000 * 5 )
+    _timeouts.push( errorTimeout )
+
     connect()
     function connect () {
-      setTimeout( function () {
+      const timeout = setTimeout( function () {
         const socket = net.connect( ipcPath )
         socket.once( 'connect', function () {
+          clearTimeout( errorTimeout )
           // console.log( 'listen:connected' )
           api.socket = socket
           api.emit( 'connected' )
@@ -55,6 +67,8 @@ function listen ( name ) {
           connect()
         } )
       }, 250 )
+
+      _timeouts.push( timeout )
     }
 
     api.buffer = ''
