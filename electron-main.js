@@ -53,7 +53,7 @@ const _pages = {}
 const eleko = require( './index.js' )
 const eeto = require( 'eeto' )
 
-const stdioipc = require( './stdio-ipc.js' )
+const stdioipc = require( './socket-ipc.js' )
 
 // is this needed?
 let _launchOptions = {}

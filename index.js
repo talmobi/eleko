@@ -7,7 +7,7 @@ const eeto = require( 'eeto' )
 const nozombie = require( 'nozombie' )
 const pf = require( 'parse-function' )()
 
-const stdioipc = require( './stdio-ipc.js' )
+const stdioipc = require( './socket-ipc.js' )
 
 const _envs = {}
 Object.keys( process.env ).forEach(
