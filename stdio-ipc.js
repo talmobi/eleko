@@ -16,6 +16,23 @@ function clean () {
 
 process.on( 'close', clean )
 
+// ref: https://nodejs.org/api/net.html#net_identifying_paths_for_ipc_connections
+function getIPCPath ( name ) {
+  let ipcPath
+
+  name = String( 'ipc[' + name + ']' )
+
+  if ( process.platform === 'win32' ) {
+    return path.join( '\\\\.\\pipe', __dirname, name + 'pipe' )
+  }
+
+  ipcPath = path.join( __dirname, name + '.pipe' )
+  // delete in unix as it's not automatically cleaned up
+  rimraf.sync( ipcPath )
+
+  return ipcPath
+}
+
 
 function create ( stdread, stdwrite ) {
   const api = eeto()
