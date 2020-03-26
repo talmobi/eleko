@@ -80,7 +80,7 @@ const DEFAULT_OPTS = {
   width: 800,
   height: 600,
   webPreferences: {
-    autoplayPolicy: [ 'no-user-gesture-required', 'user-gesture-required', 'document-user-activation-required' ][ 2 ],
+    autoplayPolicy: [ 'no-user-gesture-required', 'user-gesture-required', 'document-user-activation-required' ][ 0 ],
 
     // javascript: false,
     images: false,
