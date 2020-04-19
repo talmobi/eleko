@@ -356,6 +356,7 @@ function launch ( launchOptions )
           }
 
           const polling = Number( opts.polling ) || POLL_INTERVAL
+          const timeoutTime = Number( opts.timeout ) || WAITFOR_TIMEOUT_TIME
 
           if ( typeof query === 'string' ) {
             function fn ( querySelector ) {
@@ -387,8 +388,8 @@ function launch ( launchOptions )
               }
 
               const _wait_timeout = setTimeout( function () {
-                finish( 'error: waitFor timed out (over ' + WAITFOR_TIMEOUT_TIME + ' ms)' )
-              }, WAITFOR_TIMEOUT_TIME )
+                finish( 'error: waitFor timed out (over ' + timeoutTime + ' ms)' )
+              }, timeoutTime )
               page._timeouts.push( _wait_timeout )
 
               _tick_timeout = setTimeout( tick, 1 ) // start polling
@@ -600,6 +601,9 @@ function waitFor ( mainWindow, query, ...args )
     )
   }
 
+  const pollingMs = Number( opts.polling ) || POLL_INTERVAL
+  const timeoutTime = Number( opts.timeout ) || WAITFOR_TIMEOUT_TIME
+
   let _timeout
 
   return new Promise ( function ( resolve, reject ) {
@@ -650,9 +654,7 @@ function waitFor ( mainWindow, query, ...args )
         return resolve()
       }
 
-      const ms = Number( opts.polling ) || POLL_INTERVAL
-
-      _timeout = setTimeout( next, ms )
+      _timeout = setTimeout( next, pollingMs )
     }
 
     next()
@@ -662,7 +664,7 @@ function waitFor ( mainWindow, query, ...args )
 
       const now = Date.now()
       const delta = ( now - startTime )
-      if ( delta > WAITFOR_TIMEOUT_TIME ) {
+      if ( delta > timeoutTime ) {
         return reject( 'error: timed out waitFor' )
       }
 
