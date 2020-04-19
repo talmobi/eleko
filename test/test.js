@@ -190,6 +190,84 @@ test( 'waitFor function', async function ( t ) {
   t.ok( delta >= 1000 && delta < 2000, 'timed waited reasonable' )
 } )
 
+test( 'waitFor custom timeout', async function ( t ) {
+  // waitFor custom duration
+  t.plan( 3 )
+
+  const now = Date.now()
+  const text = await _page.evaluate( function ( data ) {
+    const el = document.querySelector( 'div[type=custom-waitfor-timeout]' )
+    return el && el.textContent
+  } )
+
+  await _page.evaluate( function ( data ) {
+    triggerWaitFor( 'custom-waitfor-timeout' )
+  } )
+
+  await _page.waitFor( { timeout: 3000 }, function () {
+    const el = document.querySelector( 'div[type=custom-waitfor-timeout]' )
+    return !!el
+  } )
+
+  // time waited
+  const delta = Date.now() - now
+
+  const newText = await _page.evaluate( function ( data ) {
+    const el = document.querySelector( 'div[type=custom-waitfor-timeout]' )
+    return el && el.textContent
+  } )
+
+  t.ok( text === null || text === undefined, 'element did not exists yet OK' )
+  t.equal( newText, 'custom-waitfor-timeout text', 'element added later during waitFor OK' )
+  t.ok( delta >= 1000 && delta < 2000, 'timed waited reasonable' )
+} )
+
+test( 'waitFor custom timeout error', async function ( t ) {
+  // waitFor custom duration
+  t.plan( 4 )
+
+  const now = Date.now()
+  const text = await _page.evaluate( function ( data ) {
+    const el = document.querySelector( 'div[type=custom-waitfor-timeout-error]' )
+    return el && el.textContent
+  } )
+
+  await _page.evaluate( function ( data ) {
+    triggerWaitFor( 'custom-waitfor-timeout-error' )
+  } )
+
+  let timeout_error = undefined
+  try {
+    // waitFor only 500ms trigger won't happen before that
+    await _page.waitFor( { timeout: 500 }, function () {
+      const el = document.querySelector( 'div[type=custom-waitfor-timeout-error]' )
+      return !!el
+    } )
+  } catch ( err ) {
+    timeout_error = err
+  }
+
+  // time waited
+  const delta = Date.now() - now
+
+  t.ok( text === null || text === undefined, 'element did not exists yet OK' )
+  t.ok( timeout_error, 'waitFor timed out OK' )
+  t.ok( delta < 1000, 'timed waited within range' )
+
+  // wait to make sure the trigger did finally happen even
+  // though our waitFor timed out
+  await new Promise( function ( resolve ) {
+    setTimeout( resolve, 1000 )
+  } )
+
+  const newText = await _page.evaluate( function ( data ) {
+    const el = document.querySelector( 'div[type=custom-waitfor-timeout-error]' )
+    return el && el.textContent
+  } )
+
+  t.equal( newText, 'custom-waitfor-timeout-error text', 'element added later during waitFor OK' )
+} )
+
 test( 'evaluate promise', async function ( t ) {
   // evaluate promise
   t.plan( 2 )
