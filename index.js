@@ -5,6 +5,7 @@ const url = require( 'url' )
 const eeto = require( 'eeto' )
 
 const nozombie = require( 'nozombie' )
+
 const pf = require( 'parse-function' )()
 
 const stdioipc = require( './socket-ipc.js' )
@@ -104,7 +105,6 @@ function getDefaultOptions ()
 function launch ( launchOptions )
 {
   const nz = nozombie()
-
   launchOptions = launchOptions || {}
 
   return new Promise( async function ( browserResolve, browserReject ) {
@@ -525,14 +525,11 @@ function launch ( launchOptions )
       }
 
       return browser._close_promise = new Promise ( async function ( resolve, reject ) {
-        const _force_kill_timeout = setTimeout( function () {
-          // force kill
-          nz.kill()
-        }, 1000 * 10 )
+        // force kill within 10 seconds
+        nz.add( { pid: spawn.pid, ttl: 1000 * 10 } )
 
         browser._close_callback = function ( err, val ) {
           if ( browser._close_callback.done ) return
-          clearTimeout( _force_kill_timeout )
           browser._close_callback.done = true
 
           if ( err ) return reject( err )
@@ -554,9 +551,7 @@ function launch ( launchOptions )
       clearTimeout( _heartbeatTimeout )
       log( 1, 'electron spawn exited, code: ' + code )
 
-      setTimeout( function () {
-        nz.kill()
-      }, 0 )
+      nz.kill()
 
       browser.emit( 'exit', code )
       browser.emit( 'close', code )
