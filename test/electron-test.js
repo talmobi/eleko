@@ -27,12 +27,20 @@ test( 'init local test http server', async function ( t ) {
   // serve our static test files
   expressApp.use( express.static( path.join( __dirname, 'stage' ) ) )
 
-  server.listen( port, host, function () {
-    const address = server.address()
-    const url = `http://127.0.0.1:${ address.port }/index.html`
-    console.log( url )
-    t.equal( address.port, port, 'local test http server running' )
+  const listenPromise = new Promise( function ( resolve ) {
+    server.listen( port, host, function () {
+      const address = server.address()
+      const url = `http://127.0.0.1:${ address.port }/index.html`
+      console.log( url )
+      t.equal( address.port, port, 'local test http server running' )
+
+      setTimeout( resolve, 1000 )
+    } )
   } )
+
+  await listenPromise
+
+  t.end()
 } )
 
 process.on( 'uncaughtException', function ( error ) {
