@@ -33,7 +33,8 @@ test( 'play youtube video', async function ( t ) {
 
   // av1 required codec, some wooly all-codecs chromium can't
   // play if polly optimizations are enabled )
-  await page.goto( 'https://www.youtube.com/watch?v=Gu2pVPWGYMQ' )
+  // await page.goto( 'https://www.youtube.com/watch?v=Gu2pVPWGYMQ' ) // removed from youtube
+  await page.goto( 'https://www.youtube.com/watch?v=w4LkSRXrK34&list=PLyqf6gJt7KuHBmeVzZteZUlNUQAVLwrZS&index=4&t=0s' )
   await page.waitFor( function () {
     const video = document.querySelector( 'video' )
 
@@ -78,7 +79,7 @@ test( 'play youtube video', async function ( t ) {
 
   async function finish ( time ) {
     t.ok( time.currentTime > 1, 'currentTime ok' )
-    t.equal( time.duration | 0, 161, 'duration ok' )
+    t.equal( time.duration | 0, 200, 'duration ok' )
 
     await browser.close()
     t.pass( 'browser closed' )
