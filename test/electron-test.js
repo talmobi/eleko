@@ -34,7 +34,7 @@ test( 'init local test http server', async function ( t ) {
       console.log( url )
       t.equal( address.port, port, 'local test http server running' )
 
-      setTimeout( resolve, 1000 )
+      setTimeout( resolve, 2000 )
     } )
   } )
 
