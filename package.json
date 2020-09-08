@@ -1,6 +1,6 @@
 {
   "name": "eleko",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "electron helper fns",
   "main": "index.js",
   "files": [
