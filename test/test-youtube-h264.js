@@ -17,10 +17,22 @@ test( 'play youtube video', async function ( t ) {
     const url = req.url
     const resourceType = req.resourceType
 
-    const shouldBlock = (
+    let shouldBlock = (
       resourceType === 'image' ||
       containsAds( url )
     )
+
+    if ( resourceType === 'other' ) {
+      // block fonts and stuff
+      shouldBlock = true
+    }
+
+    if ( resourceType === 'script' ) {
+      if ( url.indexOf( 'base.js' ) === -1 ) {
+        // block unnecessary scripts
+        shouldBlock = true
+      }
+    }
 
     if ( shouldBlock ) {
       console.log( '(x) blocked url: ' + url.slice( 0, 45 ) )
