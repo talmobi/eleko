@@ -775,6 +775,8 @@ async function newPage ( options ) {
         session.setUserAgent( DEFAULT_USERAGENT )
       }
 
+      await session.clearStorageData()
+
       log( 1, 'prime:win:devtools' )
       if ( page.options.devtools || _envs.debug || _envs.devtools ) {
         win.openDevTools()
