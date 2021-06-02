@@ -70,22 +70,35 @@ run()
 // TODO DEPRECATED
 async function run () {
   const nfzf = require('node-fzf')
+  const yts = require('yt-search')
 
-  const opts = {
-    list: list,
-    mode: 'normal'
-  }
-  const result = await nfzf( opts )
+  const { selected, query } = await nfzf.getInput('search youtube: ')
+  const searchTerm = query
 
-  const { selected, query } = result
-
-  await electronReadyPromise
-
-  if ( !selected ) {
-    console.log( 'no matches for query: ' + query )
+  if (!searchTerm) {
+    console.log('No query given. Exiting.')
+    process.exit()
   } else {
-    console.log( 'selected: ' + selected.value )
-    createWindow( selected.value )
+    const r = await yts(searchTerm)
+    const list = r.videos.map(function (v) {
+      return `(${v.timestamp}) | ${v.title} | ${v.url}`
+    })
+    const opts = {
+      list: list,
+      mode: 'normal',
+    }
+
+    const { selected, query } = await nfzf(opts)
+
+    await electronReadyPromise
+
+    if ( !selected ) {
+      console.log('no matches for query: ' + query)
+    } else {
+      const url = r.videos[selected.index].url
+      console.log('selected: ' + selected.value)
+      createWindow(url)
+    }
   }
 }
 
@@ -194,25 +207,25 @@ async function createWindow ( url ) {
 
   // win.openDevTools()
 
-  // skip ads ASAP
+  // skip ads by pressing skip button ASAP
   eleko.evaluate(
     win,
     function () {
       return new Promise ( function ( resolve, reject ) {
-        let interval = setInterval( function () {
+        tick()
+        function tick () {
+          console.log( 'ytp ad skip button' )
+
           const btn = document.querySelector( '.ytp-ad-skip-button' )
           if ( btn ) {
-            clearInterval( interval )
+            btn.class = 'done'
+            btn.style.background = 'red'
             btn.click()
-
-            // btn.style.background = 'red'
-            // btn.style.color = 'black'
-            // setTimeout( function () {
-            //   resolve()
-            //   btn.click()
-            // }, 2000 )
+            console.log( 'SKIP AD CLICKED!!' )
           }
-        }, 1000 )
+
+          setTimeout(tick, 250)
+        }
       } )
     },
   )
@@ -286,9 +299,14 @@ async function createWindow ( url ) {
         tick()
         function tick () {
           const v = window.wideo
+          v._play()
           if ( v && v.readyState === 4 ) { // HAVE_ENOUGH_DATA
             v._play()
             resolve()
+
+            setInterval(function () {
+              v._play()
+            }, 1000)
           } else {
             setTimeout( tick, 500 )
           }
