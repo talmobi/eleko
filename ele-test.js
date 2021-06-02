@@ -224,6 +224,14 @@ async function createWindow ( url ) {
             console.log( ' --- Skip Ad Button CLICKED!!' )
           }
 
+          const overlayCloseBtn = document.querySelector( '.ytd-ad-overlay-close-button' )
+          if ( overlayCloseBtn ) {
+            overlayCloseBtn.class = 'done'
+            overlayCloseBtn.style.background = 'red'
+            overlayCloseBtn.click()
+            console.log( ' --- Overlay Close Button CLICKED!!' )
+          }
+
           setTimeout( tick, 250 )
         }
       } )
