@@ -216,15 +216,15 @@ async function createWindow ( url ) {
         function tick () {
           console.log( 'ytp ad skip button' )
 
-          const btn = document.querySelector( '.ytp-ad-skip-button' )
-          if ( btn ) {
-            btn.class = 'done'
-            btn.style.background = 'red'
-            btn.click()
-            console.log( 'SKIP AD CLICKED!!' )
+          const skipAdBtn = document.querySelector( '.ytp-ad-skip-button' )
+          if ( skipAdBtn ) {
+            skipAdBtn.class = 'done'
+            skipAdBtn.style.background = 'red'
+            skipAdBtn.click()
+            console.log( ' --- Skip Ad Button CLICKED!!' )
           }
 
-          setTimeout(tick, 250)
+          setTimeout( tick, 250 )
         }
       } )
     },
