@@ -61,6 +61,8 @@ api.launch = launch
 api.goto = goto
 api.waitFor = waitFor
 api.evaluate = evaluate
+api.setAudioMuted = setAudioMuted
+api.getAudioMuted = getAudioMuted
 api.setUserAgent = setUserAgent
 api.getUserAgent = getUserAgent
 api.onrequest = onrequest
@@ -414,6 +416,59 @@ function launch ( launchOptions )
           } )
         }
 
+        page.setAudioMuted = function page_setAudioMuted ( muted ) {
+          log( 1, 'api.page.setAudioMuted' )
+
+          const content = {
+            muted: muted,
+            id: page.id,
+          }
+
+          return new Promise( async function ( resolve, reject ) {
+            const evt = { type: 'page:setAudioMuted', content: content }
+            const queue = page.queue
+
+            queue.push( {
+              evt: evt,
+              callback: function q_callback ( err, data ) {
+                if ( q_callback.done ) return
+                q_callback.done = true
+                log( 1, 'queue page:setAudioMuted callback' )
+                if ( err ) return reject( err )
+                resolve( data )
+              }
+            } )
+
+            page._queue_tick()
+          } )
+        }
+
+        page.getAudioMuted = function page_getAudioMuted () {
+          log( 1, 'api.page.getAudioMuted' )
+
+          const content = {
+            id: page.id
+          }
+
+          return new Promise( async function ( resolve, reject ) {
+            const evt = { type: 'page:getAudioMuted', content: content }
+            const queue = page.queue
+
+            queue.push( {
+              evt: evt,
+              callback: function q_callback ( err, data ) {
+                if ( q_callback.done ) return
+                q_callback.done = true
+                log( 1, 'queue page:getAudioMuted callback' )
+                if ( err ) return reject( err )
+                resolve( data )
+              }
+            } )
+
+            page._queue_tick()
+          } )
+        }
+
         page.setUserAgent = function page_setUserAgent ( userAgent ) {
           log( 1, 'api.page.setUserAgent' )
 
@@ -563,6 +618,14 @@ function launch ( launchOptions )
 
     browserResolve( browser )
   } )
+}
+
+function setAudioMuted ( mainWindow, muted ) {
+  mainWindow.webContents.audioMuted = muted
+}
+
+function getAudioMuted ( mainWindow ) {
+  return mainWindow.webContents.audioMuted
 }
 
 function setUserAgent ( mainWindow, userAgent )

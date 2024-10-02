@@ -325,6 +325,60 @@ ipc.on( 'promise:page:getUserAgent', async function ( req ) {
   }
 } )
 
+ipc.on( 'promise:page:setAudioMuted', async function ( req ) {
+  log( 1, 'promise:page:setAudioMuted' )
+
+  log( 1, req.data )
+
+  const page = _pages[ req.data.id ]
+  const data = req.data
+
+  log( 1, 'page:' )
+  log( 1, page )
+
+  if ( !page ) {
+    return req.callback( 'no page found for id: ' + req.data.id )
+  }
+
+  try {
+    log( 1, 'promise:page:setAudioMuted:waiting' )
+    const value = eleko.setAudioMuted.apply( this, [ page.win, data.muted ] )
+    log( 1, 'promise:page:setAudioMuted:done' )
+    req.callback( undefined, value )
+  } catch ( err ) {
+    log( 1, 'promise:page:setAudioMuted:error' )
+    console.log( err )
+    req.callback( err && err.message || err )
+  }
+} )
+
+ipc.on( 'promise:page:getAudioMuted', async function ( req ) {
+  log( 1, 'promise:page:getAudioMuted' )
+
+  log( 1, req.data )
+
+  const page = _pages[ req.data.id ]
+  const data = req.data
+
+  log( 1, 'page:' )
+  log( 1, page )
+
+  if ( !page ) {
+    return req.callback( 'no page found for id: ' + req.data.id )
+  }
+
+  try {
+    log( 1, 'promise:page:getAudioMuted:waiting' )
+    const value = eleko.getAudioMuted.apply( this, [ page.win ] )
+    log( 1, 'promise:page:getAudioMuted:done' )
+    req.callback( undefined, value )
+  } catch ( err ) {
+    log( 1, 'promise:page:getAudioMuted:error' )
+    console.log( err )
+    req.callback( err && err.message || err )
+  }
+} )
+
 // Quit when all windows are closed.
 app.on( 'window-all-closed', function () {
   // On OS X it is common for applications and their menu bar
