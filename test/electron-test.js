@@ -136,7 +136,7 @@ test( 'goto local index.html', async function ( t ) {
     return document.title
   } )
 
-  t.equal( title, 'Adorable baby giraffes' )
+  t.equal( title, 'Adorable baby giraffes', 'adorable giraffes ok' )
 } )
 
 test( 'evaluate title with string args', async function ( t ) {
