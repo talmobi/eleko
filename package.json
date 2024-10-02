@@ -37,13 +37,13 @@
     "email": "talmo.christian@gmail.com"
   },
   "dependencies": {
-    "eeto": "0.0.4",
+    "eeto": "~0.0.4",
     "nozombie": "~1.1.0",
-    "parse-function": "~5.6.5",
-    "rimraf": "~3.0.2"
+    "parse-function": "~5.6.10",
+    "rimraf": "~6.0.1"
   },
   "devDependencies": {
-    "ad-block-js": "0.0.2",
+    "ad-block-js": "~0.0.2",
     "cross-env": "~7.0.2",
     "electron": "~32.1.2",
     "express": "~4.21.0",
